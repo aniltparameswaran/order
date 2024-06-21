@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using order.Models;
 using System.IdentityModel.Tokens.Jwt;
@@ -10,68 +11,142 @@ namespace order.Utils
 {
     public class SecurityUtils
     {
-        private IConfiguration _iconfiguration;
-        private readonly string publicKey;
-        private readonly string privateKey;
+        private readonly IConfiguration _iconfiguration;
+
         public SecurityUtils(IConfiguration configuration)
         {
+
             _iconfiguration = configuration;
-            using (var rsa = RSA.Create())
+        }
+
+        public static string encrypt(string encryptString)
+        {
+            string EncryptionKey = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            byte[] clearBytes = Encoding.Unicode.GetBytes(encryptString);
+            using (Aes encryptor = Aes.Create())
             {
-                rsa.KeySize = 2048;
-                publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
-                privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
+                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] {
+            0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76
+             });
+                encryptor.Key = pdb.GetBytes(32);
+                encryptor.IV = pdb.GetBytes(16);
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateEncryptor(), CryptoStreamMode.Write, true))
+                    {
+                        cs.Write(clearBytes, 0, clearBytes.Length);
+                        cs.Close();
+                    }
+                    encryptString = Convert.ToBase64String(ms.ToArray());
+                }
             }
+
+            return encryptString;
+        }
+
+
+
+        public static string EncryptString(string data)
+        {
+            string res = string.Empty;
+            try
+            {
+                res = encrypt(data);
+            }
+            catch (Exception)
+            {
+
+            }
+            return res;
+        }
+
+        public static string DecryptString(string data)
+        {
+            string res = string.Empty;
+            try
+            {
+                res = Decrypt(data);
+            }
+            catch (Exception)
+            {
+
+            }
+            return res;
+        }
+
+
+
+
+        public static string Decrypt(string cipherText)
+        {
+            string EncryptionKey = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            cipherText = cipherText.Replace(" ", "+");
+            byte[] cipherBytes = Convert.FromBase64String(cipherText);
+            using (Aes encryptor = Aes.Create())
+            {
+                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] {
+            0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76
+        });
+                encryptor.Key = pdb.GetBytes(32);
+                encryptor.IV = pdb.GetBytes(16);
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
+                    {
+                        cs.Write(cipherBytes, 0, cipherBytes.Length);
+                        cs.Close();
+                    }
+                    cipherText = Encoding.Unicode.GetString(ms.ToArray());
+                }
+            }
+            return cipherText;
+        }
+
+        public static string EncryptModel(string value,string userDeatils)
+        {
+            string res = string.Empty;
+            try
+            {
+                EncryptvalueModel model = new EncryptvalueModel
+                {
+                    CurrentDate = DateTime.Now,
+                    value = value,
+                    userDeatils= userDeatils,
+
+                };
+                res = EncryptString(JsonConvert.SerializeObject(model));
+            }
+            catch (Exception)
+            {
+
+            }
+            return res;
+        }
+
+
+
+        public static EncryptvalueModel DecryptModel(string valueModel)
+        {
+            EncryptvalueModel res = null;
+            try
+            {
+                res = JsonConvert.DeserializeObject<EncryptvalueModel>(DecryptString(valueModel));
+            }
+            catch (Exception)
+            {
+
+            }
+            return res;
+        }
+
+        public class EncryptvalueModel
+        {
+            public DateTime CurrentDate { get; set; }
+
+            public string value { get; set; }
+            public string userDeatils { get; set; }
         }
         
-
-        
-        public string Encrypt(string data)
-        {
-            using (var rsa = RSA.Create())
-            {
-                rsa.ImportRSAPublicKey(Convert.FromBase64String(publicKey), out _);
-                var encryptedData = rsa.Encrypt(Encoding.UTF8.GetBytes(data), RSAEncryptionPadding.OaepSHA256);
-                return Convert.ToBase64String(encryptedData);
-            }
-        }
-        public string Decrypt(string encryptedData)
-        {
-            using (var rsa = RSA.Create())
-            {
-                rsa.KeySize = 2048;
-                
-
-                rsa.ImportRSAPrivateKey(Convert.FromBase64String(privateKey), out _);
-                var decryptedData = rsa.Decrypt(Convert.FromBase64String(encryptedData), RSAEncryptionPadding.OaepSHA256);
-                return Encoding.UTF8.GetString(decryptedData);
-            }
-        }
-        public string GetToken(int user_id)
-        {
-            var claims = new[]
-            {
-                        new Claim(JwtRegisteredClaimNames.Sub,_iconfiguration["Jwt:Subject"]),
-                        new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()),
-                        new Claim(JwtRegisteredClaimNames.Iat,DateTime.UtcNow.ToString()),
-                        new Claim("user_id",user_id.ToString()),
-
-            };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_iconfiguration["Jwt:Key"]));
-
-            var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                _iconfiguration["Jwt:Issuer"],
-                _iconfiguration["Jwt:Audience"],
-                claims,
-                expires: DateTime.UtcNow.AddDays(40),
-                signingCredentials: signIn
-                );
-            var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
-            return accessToken;
-        }
         
 
         

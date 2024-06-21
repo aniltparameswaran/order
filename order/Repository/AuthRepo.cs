@@ -1,11 +1,13 @@
 ﻿using Dapper;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using order.Context;
 using order.IRepository;
 using order.Models;
 using order.Utils;
 using System.Data;
 using System.Text.RegularExpressions;
+using static order.Utils.SecurityUtils;
 
 namespace order.Repository
 {
@@ -13,12 +15,10 @@ namespace order.Repository
     {
         private readonly DapperContext _dapperContext;
         private readonly IConfiguration _configuration;
-        private readonly SecurityUtils _securityUtils;
-        public AuthRepo(DapperContext dapperContext, IConfiguration configuration, SecurityUtils securityUtils)
+        public AuthRepo(DapperContext dapperContext, IConfiguration configuration)
         {
             _dapperContext = dapperContext;
             _configuration = configuration;
-            _securityUtils = securityUtils;
         }
 
         public async Task<(bool, string)> ForgotPassword(string? email, string? phone)
@@ -45,12 +45,8 @@ namespace order.Repository
                 }
                 if (email != null)
                 {
-                    VarificationModel data = new VarificationModel();
-                    data.otp = int.Parse(otp);
-                    data.currentDateTime = DateTime.Now;
-                    data.userDeatils = email.ToString();
-                    var jsonData = JsonConvert.SerializeObject(data);
-                    var encrypted_otp = _securityUtils.Encrypt(jsonData);
+                    
+                    var encrypted_otp = SecurityUtils.EncryptModel(otp, email.ToString());
 
                     var userNmae = await connection.QueryAsync<string>(getEmailQuery, new { phone });
                     var name = userNmae.FirstOrDefault();
@@ -92,15 +88,15 @@ namespace order.Repository
                 if (encryptPassword != null)
                 {
                     var encryptPasswordtoDecrpt=encryptPassword.FirstOrDefault();
-                    var decryPassword = _securityUtils.Decrypt(encryptPasswordtoDecrpt.ToString());
-                    if (password == decryPassword)
+                    var decryPassword = SecurityUtils.DecryptString(encryptPasswordtoDecrpt.ToString());
+                    if ((password+email) == decryPassword)
                     {
                         var id = await connection.QueryAsync<int>(getuserId, new { email, phone });
                         var userId=id.FirstOrDefault();
                         if( userId > 0)
                         {
-                            var tokenUtilities = new SecurityUtils(_configuration);
 
+                            var tokenUtilities = new TokenUtil(_configuration);
                             var token = tokenUtilities.GetToken(userId).ToString();
                            
                             if (token != null)
@@ -126,12 +122,12 @@ namespace order.Repository
         {
             var updateQuery = "update tb_user set password=@password where email=@email;" +
                 "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
-            var email = _securityUtils.Decrypt(data);
+            var email = SecurityUtils.DecryptString(data);
             if(email != null)
             {
                 using (var connection = _dapperContext.CreateConnection())
                 {
-                    var encryptPassword = _securityUtils.Encrypt(password);
+                    var encryptPassword = SecurityUtils.EncryptString(password + email);
                     var status = await connection.ExecuteScalarAsync<int>(updateQuery, new { password = encryptPassword, email=email} );
                     if(status > 0)
                     {
@@ -146,16 +142,16 @@ namespace order.Repository
 
         public async Task<(bool, string)> VarificationOtp(string data, int otp)
         {
-            var decryptedData = _securityUtils.Decrypt(data);
+            EncryptvalueModel decryptedData = SecurityUtils.DecryptModel(data);
             if (decryptedData != null)
             {
-                var model = JsonConvert.DeserializeObject<VarificationModel>(decryptedData);
-                var timeDifference = DateTime.Now - model.currentDateTime;
+                
+                var timeDifference = DateTime.Now - decryptedData.CurrentDate;
                     if (timeDifference.TotalMinutes < 5)
                 {
-                    if (model.otp == otp)
+                    if (decryptedData.value == otp.ToString())
                     {
-                        return (true, _securityUtils.Encrypt(model.userDeatils));
+                        return (true, SecurityUtils.EncryptString(decryptedData.userDeatils));
                     }
                     return (false, StatusUtils.INVALID_OTP);
                 }

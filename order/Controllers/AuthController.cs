@@ -22,12 +22,28 @@ namespace order.Controllers
         }
         [HttpPost]
         [Route("login")]
-        public async Task<IActionResult> LoginAsync(string? email, string? phone, string password)
+        public async Task<IActionResult> Login(string? email, string? phone, string password)
         {
             try
             {
                 if(email != null || phone != null)
                 {
+                    if (!string.IsNullOrEmpty(email))
+                    {
+                        var (email_exist_user_id, email_message) = await _userRepo.IsEmailExist(email);
+                        if (email_exist_user_id == 0)
+                        {
+                            return BadRequest(new { data = string.Empty, message = email_message });
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(phone))
+                    {
+                        var (phone_number_exist_user_id, phone_number_message) = await _userRepo.IsPhoneNumberExist(phone);
+                        if (phone_number_exist_user_id == 0)
+                        {
+                            return BadRequest(new { data = string.Empty, message = phone_number_message });
+                        }
+                    }
                     var (status, access_token) = await _authRepo.Login(email, phone, password);
                     if (status)
                     {

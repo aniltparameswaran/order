@@ -31,7 +31,7 @@ namespace order.Repository
                 using (var connection = _dapperContext.CreateConnection())
                 {
                     var password = StringUtils.GenerateRandomString(7);
-                    var encrypted_password = _securityUtils.Encrypt(password);
+                    var encrypted_password = SecurityUtils.EncryptString(password+ model.email);
                     var parameter = new DynamicParameters();
                     parameter.Add("user_name", model.user_name);
                     parameter.Add("address", model.address);
