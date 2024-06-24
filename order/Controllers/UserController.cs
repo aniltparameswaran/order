@@ -65,23 +65,23 @@ namespace order.Controllers
             }
         }
 
-       /* [Authorize]*/
+        [Authorize]
         [HttpGet]
         [Route("get-user-all-details")]
         public async Task<IActionResult> GetUserDetails()
         {
             try
             {
-               /* var userIdClaim = HttpContext.User.FindFirst("user_id");
+                var userIdClaim = HttpContext.User.FindFirst("user_id");
                 if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId == 1)
+                if (userId != 1)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
-*/
+
                 var user_details = await _userRepo.GetAllUserDetails();
                 if (user_details == null)
                 {
@@ -102,11 +102,11 @@ namespace order.Controllers
         {
             try
             {
-                /*var userIdClaim = HttpContext.User.FindFirst("user_id");
+                var userIdClaim = HttpContext.User.FindFirst("user_id");
                 if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
-                }*/
+                }
 
 
                 var user_details = await _userRepo.GetUserDetailsByUserId(user_id);

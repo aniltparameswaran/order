@@ -20,44 +20,56 @@ namespace order.Repository
             _dapperContext = dapperContext;
             _configuration = configuration;
         }
-
-        public async Task<(bool, string)> ForgotPassword(string? email, string? phone)
+        public bool IsEmail(string input)
         {
-            var getEmailQuery = "select email from tb_user where phone=@phone";
-            var getQuery = "select user_name from tb_user where email=@email";
+
+            return Regex.IsMatch(input, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+        }
+        public async Task<(bool, string)> ForgotPassword(string userName)
+        {
+            string query = "SELECT user_id,user_name,email FROM tb_user WHERE ";
+           
             using(var connection=_dapperContext.CreateConnection())
             {
                 var otp = StringUtils.GenerateRandomOTP(4);
+                var userId = 0;
+                var parameter = new DynamicParameters();
 
-                
-                var emailService = new CommunicationUtils();
-                if (phone != null)
+                if (IsEmail(userName))
                 {
-                    var emailOfUser= await connection.QueryAsync<string>(getEmailQuery, new { phone });
-                    if (emailOfUser != null)
-                    {
-                        email = emailOfUser.FirstOrDefault();
-                    }
-                    else
-                    {
-                        return (false, StatusUtils.USER_NOT_FOUND);
-                    }
+                    query += " email = @username";
+                    parameter.Add("username", userName, DbType.String);
                 }
-                if (email != null)
+                else
                 {
-                    
-                    var encrypted_otp = SecurityUtils.EncryptModel(otp, email.ToString());
-
-                    var userNmae = await connection.QueryAsync<string>(getEmailQuery, new { phone });
-                    var name = userNmae.FirstOrDefault();
+                    query += " phone_number = @username";
+                    parameter.Add("username", userName, DbType.String);
+                }
+                var emailService = new CommunicationUtils();
+                
+                var userDeatils= await connection.QueryFirstOrDefaultAsync(query, parameter);
+                if (userDeatils != null)
+                {
+                    userId = userDeatils.user_id;
+                }
+                else
+                {
+                    return (false, StatusUtils.USER_NOT_FOUND);
+                }
+                
+                if (userId >0)
+                {
+                    var encrryptUserId = SecurityUtils.EncryptString(userId.ToString());
+                    var encrypted_otp = SecurityUtils.EncryptModel(otp, encrryptUserId);
+                    var name = userDeatils.user_name;
                     EmailModel mail = new EmailModel();
                     mail.from_email_password = "kgwo ymcv ravu vltr";
                     mail.from_email = "aniltparameswaran@gmail.com";
-                    mail.to_email = email;
+                    mail.to_email = userDeatils.email;
                     mail.email_html_body = "<html><body><p> Hi " + name + "</p><p> Your OTP is " + otp +
                         "<br> Don`t share the otp.</p><p><strong> Thanks & Regards,</strong><br><em> " +
                         " Leadwear Team </em></p><p><em> Powered by Leadwear </em></p></body></html>";
-                    mail.subject = "Yor Passward";
+                    mail.subject = "Your Passward";
                     bool status = emailService.SendMail(mail);
                     if (status)
                     {
@@ -70,13 +82,9 @@ namespace order.Repository
             throw new NotImplementedException();
         }
 
-        public async Task<(bool, string)> Login(string? email, string? phone, string password)
+        public async Task<(bool, string)> Login(string userName, string password)
         {
-            var getQuery = "select password from tb_user where (email=@email OR phone=@phone) and is_delete=0;";
-
-            var getuserId = "select user_id from tb_user where (email=@email OR phone=@phone) and is_delete=0; ";
-
-
+            var getQuery = "select password,email,user_id from tb_user where is_delete=0";
 
             using (var connection = _dapperContext.CreateConnection())
             {
@@ -84,56 +92,70 @@ namespace order.Repository
                 {
                     throw new InvalidOperationException("Database connection cannot be created");
                 }
-                var encryptPassword = await connection.QueryAsync<string>(getQuery, new { email ,phone});
-                if (encryptPassword != null)
-                {
-                    var encryptPasswordtoDecrpt=encryptPassword.FirstOrDefault();
-                    var decryPassword = SecurityUtils.DecryptString(encryptPasswordtoDecrpt.ToString());
-                    if ((password+email) == decryPassword)
-                    {
-                        var id = await connection.QueryAsync<int>(getuserId, new { email, phone });
-                        var userId=id.FirstOrDefault();
-                        if( userId > 0)
-                        {
+                var parameter = new DynamicParameters();
 
+                if (IsEmail(userName))
+                {
+                    getQuery += " and email = @username";
+                    parameter.Add("username", userName, DbType.String);
+                }
+                else
+                {
+                    getQuery += " and phone = @username";
+                    parameter.Add("username", userName, DbType.String);
+                }
+                var userDetails = await connection.QueryFirstOrDefaultAsync(getQuery, parameter);
+                if (userDetails != null)
+                {
+                    var encryptPasswordtoDecrpt= userDetails.password;
+                    var decryPassword = SecurityUtils.DecryptString(encryptPasswordtoDecrpt.ToString());
+                    if ((password+userDetails.email) == decryPassword)
+                    {
                             var tokenUtilities = new TokenUtil(_configuration);
-                            var token = tokenUtilities.GetToken(userId).ToString();
+                            var token = tokenUtilities.GetToken(userDetails.user_id);
                            
                             if (token != null)
                             {
                                 return (true, token);
                                 
                             }
-                        }
-                        return (false, StatusUtils.INVALID_PHONE_AND_EMAIL);
+                    }
+                    return (false, StatusUtils.INVALID_PASSWORD);
 
-                    }
-                    else 
-                    {
-                        return (false, StatusUtils.INVALID_PASSWORD);
-                    }
+                }
+                else 
+                {
+                       return (false, StatusUtils.INVALID_PHONE_OR_EMAIL);
                 }
                 
-                return (false,StatusUtils.INVALID_PHONE_AND_EMAIL);
+                return (false,StatusUtils.FAILED);
             }
         }
 
         public async Task<(bool, string)> RestPassword(string data, string password)
         {
-            var updateQuery = "update tb_user set password=@password where email=@email;" +
+            var updateQuery = "update tb_user set password=@password where user_id=@userId;" +
                 "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
-            var email = SecurityUtils.DecryptString(data);
-            if(email != null)
+            var getEmail = "select email from tb_user where user_id=@userId";
+            var user_id = SecurityUtils.DecryptString(data);
+            if(user_id != null)
             {
                 using (var connection = _dapperContext.CreateConnection())
                 {
-                    var encryptPassword = SecurityUtils.EncryptString(password + email);
-                    var status = await connection.ExecuteScalarAsync<int>(updateQuery, new { password = encryptPassword, email=email} );
-                    if(status > 0)
+                    var userId = SecurityUtils.DecryptString(user_id);
+                    if(userId != null)
                     {
-                        return (true, StatusUtils.SUCCESS);
+                        var email = await connection.QueryAsync<string>(getEmail, new { userId });
+                        var encryptPassword = SecurityUtils.EncryptString(password + email.FirstOrDefault());
+                        var status = await connection.ExecuteScalarAsync<int>(updateQuery, new { password = encryptPassword, userId = userId });
+                        if (status > 0)
+                        {
+                            return (true, StatusUtils.SUCCESS);
+                        }
+                        return (false, StatusUtils.UPDATION_FAILED);
                     }
-                    return (false, StatusUtils.UPDATION_FAILED);
+                    return (false, StatusUtils.UNAUTHORIZED_ACCESS);
+
                 }
             }
             return (false, StatusUtils.UNAUTHORIZED_ACCESS);

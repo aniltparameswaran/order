@@ -42,6 +42,7 @@ namespace order.Utils
             }
 
             return encryptString;
+
         }
 
 
@@ -144,11 +145,8 @@ namespace order.Utils
             public DateTime CurrentDate { get; set; }
 
             public string value { get; set; }
-            public string userDeatils { get; set; }
+            public string? userDeatils { get; set; }
         }
-        
-        
-
         
     }
 }

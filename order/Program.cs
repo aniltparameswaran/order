@@ -17,10 +17,18 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<DapperContext>();
 builder.Services.AddScoped<IUserRepo, UserRepo>();
 builder.Services.AddScoped<IAuthRepo, AuthRepo>();
+builder.Services.AddScoped<IBrandRepo, BrandRepo>();
+builder.Services.AddScoped<IProductRepo, ProductRepo>();
 builder.Services.AddSingleton<SecurityUtils>();
 builder.Services.AddCors(options => {
     options.AddPolicy("CORSPolicy", builder => builder.AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed((hosts) => true));
 });
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = false;
@@ -35,9 +43,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     };
 });
 
+
+
+builder.Services.AddEndpointsApiExplorer();
+
+
+
+// Swagger
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Order", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "VoiceFirst", Version = "v1" });
 
     // Add JWT authentication support to Swagger.
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -62,22 +77,27 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+
+
+
 app.UseCors("CORSPolicy");
 app.UseRouting();
 
-app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 { });
-app.UseAuthorization();
 
+app.UseHttpsRedirection();
 app.MapControllers();
-
 app.Run();
+

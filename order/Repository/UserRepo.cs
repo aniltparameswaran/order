@@ -31,7 +31,7 @@ namespace order.Repository
                 using (var connection = _dapperContext.CreateConnection())
                 {
                     var password = StringUtils.GenerateRandomString(7);
-                    var encrypted_password = SecurityUtils.EncryptString(password+ model.email);
+                    var encrypted_password = SecurityUtils.EncryptString(password+model.email);
                     var parameter = new DynamicParameters();
                     parameter.Add("user_name", model.user_name);
                     parameter.Add("address", model.address);
@@ -58,6 +58,7 @@ namespace order.Repository
                     }
                     return 0;
                 }
+
             }
             catch (Exception ex)
             {
@@ -175,7 +176,7 @@ namespace order.Repository
             try
             {
                 var user_details_query = "select user_name,email,phone," +
-                    "address,pin,adhaaar_no,is_active  from tb_user where user_id=@user_id && is_delete = 0;";
+                    "address,pin,adhaar_no,is_active  from tb_user where user_id=@user_id && is_delete = 0;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
                     var user_details = await connection.QuerySingleOrDefaultAsync<UserdetailsByIdModel>(user_details_query, new
@@ -195,7 +196,7 @@ namespace order.Repository
             try
             {
                 var user_details_query = "select user_id,user_name,email,phone," +
-                    "address,pin,adhaaar_no,is_active  from tb_user where is_delete = 0 and user_id!=1;";
+                    "address,pin,adhaar_no,is_active  from tb_user where is_delete = 0 and user_id!=1;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
                     var user_details = await connection.QuerySingleOrDefaultAsync<UserdetailsModel>(user_details_query);
@@ -212,19 +213,18 @@ namespace order.Repository
             try
             {
                 var user_update_query = "update tb_user SET user_name=@user_name," +
-                    "pin=@pin,adhaaar_no=@adhaaar_no,address=@address,updated_date=NOW() where user_id=@user_id;" +
+                    "pin=@pin,adhaar_no=@adhaar_no,address=@address,updated_date=NOW() where user_id=@user_id; " +
                     "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
                     var parameters = new DynamicParameters();
                     parameters.Add("user_name", model.user_name);
+                    parameters.Add("pin", model.pin);
+                    parameters.Add("adhaar_no", model.adhaar_no);
                     parameters.Add("address", model.address);
                     parameters.Add("user_id", user_id);
-                    parameters.Add("pin", model.pin);
-                    parameters.Add("adhaaar_no", model.adhaaar_no);
 
-                    var update_user = await connection.ExecuteScalarAsync<int>
-                      (user_update_query, parameters);
+                    var update_user = await connection.ExecuteScalarAsync<int>(user_update_query, parameters);
                     return update_user;
                 }
 
