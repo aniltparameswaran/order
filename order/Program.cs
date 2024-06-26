@@ -13,6 +13,7 @@ using order.Repository.CommonRepository;
 using order.Repository.AdminRepository;
 using order.Repository.UserRepository;
 using order.Repository;
+using order.IRepository.IUserRepository;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -28,6 +29,7 @@ builder.Services.AddScoped<IAuthRepo, AuthRepo>();
 builder.Services.AddScoped<IBrandRepo, BrandRepo>();
 builder.Services.AddScoped<IProductRepo, ProductRepo>();
 builder.Services.AddScoped<IShopRepo, ShopRepo>();
+builder.Services.AddScoped<IOrderRepo, OrderRepo>();
 builder.Services.AddSingleton<SecurityUtils>();
 
 
