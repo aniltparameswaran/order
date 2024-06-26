@@ -2,49 +2,50 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using order.DTOModel;
-using order.IRepository;
+using order.IRepository.IAdminRepositorys;
 using order.Repository;
 using order.Utils;
 
-namespace order.Controllers
+namespace order.Controllers.AdminController
 {
     [Route("api/product")]
     [ApiController]
+    [Authorize]
     public class ProductController : ControllerBase
     {
-        private  readonly IProductRepo _productRepo;
+        private readonly IProductRepo _productRepo;
+        private readonly string adminId="569806b1-3379-11ef-afb3-00224dae2257";
         public ProductController(IProductRepo productRepo)
         {
-            _productRepo= productRepo;
+            _productRepo = productRepo;
         }
 
         [HttpPost]
+        [Route("add-product")]
         public async Task<IActionResult> InsertProduct(ProductMasterDTOModel productMasterDTOModel)
         {
             try
             {
-                /* var userIdClaim = HttpContext.User.FindFirst("user_id");
-                 if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-                 {
-                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
-                 }
-                 if (userId != 1)
-                 {
-                     return Unauthorized(new { data = string.Empty, message = "Unauthorized access" });
-                 }
-                 var (brand_exist_user_id, brand_message) = await _brandRepo.IsBrandExist(brand_name);
-                 if (brand_exist_user_id != 0)
-                 {
-                     return BadRequest(new { data = string.Empty, message = brand_message });
-                 }*/
-                if(productMasterDTOModel.ProductDetailsListl.Count >0)
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
-                    var last_inserted_id = await _productRepo.InsertProduct(productMasterDTOModel);
-                    if (last_inserted_id != "")
+                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
+                }
+                if (userId != adminId)
+                {
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
+
+                if (productMasterDTOModel.ProductDetailsListl.Count > 0)
+                {
+                    var (status, data) = await _productRepo.InsertProduct(productMasterDTOModel);
+                    if (status)
                     {
-                        return Ok(new { data = last_inserted_id, message = StatusUtils.SUCCESS });
+                        return Ok(new { data, message = StatusUtils.SUCCESS });
                     }
-                   
+
+                    return BadRequest(new { data = string.Empty, message = data });
                 }
                 return BadRequest(new { data = string.Empty, message = StatusUtils.NOT_REGISTERED });
 
@@ -55,22 +56,23 @@ namespace order.Controllers
             }
         }
 
-       
+
         [HttpPut]
         [Route("update-product-master")]
         public async Task<IActionResult> UpdateProductMaster(ProductMasterUpdateDTOModel model, string product_master_id)
         {
             try
             {
-                /*var userIdClaim = HttpContext.User.FindFirst("user_id");
-                 if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-                 {
-                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
-                 }
-                 if (userId != 1)
-                 {
-                     return Unauthorized(new { data = string.Empty, message = "Unauthorized access" });
-                 }*/
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
+                }
+                if (userId != adminId)
+                {
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
                 var update_status = await _productRepo.UpdateProductMaster(model, product_master_id);
                 if (update_status > 0)
                 {
@@ -90,15 +92,16 @@ namespace order.Controllers
         {
             try
             {
-                /*var userIdClaim = HttpContext.User.FindFirst("user_id");
-                 if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-                 {
-                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
-                 }
-                 if (userId != 1)
-                 {
-                     return Unauthorized(new { data = string.Empty, message = "Unauthorized access" });
-                 }*/
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
+                }
+                if (userId != adminId)
+                {
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
                 var update_status = await _productRepo.UpdateProductDetail(model, product_details_id);
                 if (update_status > 0)
                 {
@@ -118,21 +121,22 @@ namespace order.Controllers
         {
             try
             {
-                /*var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != 1)
+                if (userId != adminId)
                 {
-                    return Unauthorized(new { data = string.Empty, message = "Unauthorized access" });
-                }*/
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
                 var (delete_status, message) = await _productRepo.DeleteProductMaster(product_master_id, action);
                 if (delete_status)
                 {
-                    return Ok(new { data = string.Empty, message = message });
+                    return Ok(new { data = string.Empty, message });
                 }
-                return BadRequest(new { data = string.Empty, message = message });
+                return BadRequest(new { data = string.Empty, message });
             }
             catch (Exception ex)
             {
@@ -146,21 +150,22 @@ namespace order.Controllers
         {
             try
             {
-                /*var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != 1)
+                if (userId != adminId)
                 {
-                    return Unauthorized(new { data = string.Empty, message = "Unauthorized access" });
-                }*/
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
                 var (delete_status, message) = await _productRepo.DeleteProductDetail(product_details_id, action);
                 if (delete_status)
                 {
-                    return Ok(new { data = string.Empty, message = message });
+                    return Ok(new { data = string.Empty, message });
                 }
-                return BadRequest(new { data = string.Empty, message = message });
+                return BadRequest(new { data = string.Empty, message });
             }
             catch (Exception ex)
             {
@@ -175,15 +180,16 @@ namespace order.Controllers
         {
             try
             {
-                /*var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != 1)
+                if (userId != adminId)
                 {
-                    return Unauthorized(new { data = string.Empty, message = "Unauthorized access" });
-                }*/
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
 
                 var product_master_list = await _productRepo.GetProductMaster();
                 if (product_master_list == null)
@@ -205,15 +211,16 @@ namespace order.Controllers
         {
             try
             {
-                /*var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != 1)
+                if (userId != adminId)
                 {
-                    return Unauthorized(new { data = string.Empty, message = "Unauthorized access" });
-                }*/
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
 
                 var product_master_deatils = await _productRepo.GetProductDetailByMasterId(product_master_id);
                 if (product_master_deatils == null)

@@ -2,14 +2,14 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using order.Context;
-using order.IRepository;
+using order.IRepository.ICommonRepositorys;
 using order.Models;
 using order.Utils;
 using System.Data;
 using System.Text.RegularExpressions;
 using static order.Utils.SecurityUtils;
 
-namespace order.Repository
+namespace order.Repository.CommonRepository
 {
     public class AuthRepo : IAuthRepo
     {
@@ -28,11 +28,11 @@ namespace order.Repository
         public async Task<(bool, string)> ForgotPassword(string userName)
         {
             string query = "SELECT user_id,user_name,email FROM tb_user WHERE ";
-           
-            using(var connection=_dapperContext.CreateConnection())
+
+            using (var connection = _dapperContext.CreateConnection())
             {
                 var otp = StringUtils.GenerateRandomOTP(4);
-                var userId ="";
+                var userId = "";
                 var parameter = new DynamicParameters();
 
                 if (IsEmail(userName))
@@ -46,8 +46,8 @@ namespace order.Repository
                     parameter.Add("username", userName, DbType.String);
                 }
                 var emailService = new CommunicationUtils();
-                
-                var userDeatils= await connection.QueryFirstOrDefaultAsync(query, parameter);
+
+                var userDeatils = await connection.QueryFirstOrDefaultAsync(query, parameter);
                 if (userDeatils != null)
                 {
                     userId = userDeatils.user_id;
@@ -56,11 +56,11 @@ namespace order.Repository
                 {
                     return (false, StatusUtils.USER_NOT_FOUND);
                 }
-                
-                if (userId !=null)
+
+                if (userId != null)
                 {
-                   
-                    var encrypted_otp = SecurityUtils.EncryptModel(otp, userId.ToString());
+
+                    var encrypted_otp = EncryptModel(otp, userId.ToString());
                     var name = userDeatils.user_name;
                     EmailModel mail = new EmailModel();
                     mail.from_email_password = "kgwo ymcv ravu vltr";
@@ -82,7 +82,7 @@ namespace order.Repository
             throw new NotImplementedException();
         }
 
-        public async Task<(bool, string)> Login(string userName, string password,int adminOrNot)
+        public async Task<(bool, string)> Login(string userName, string password, int adminOrNot)
         {
             var getQuery = "select password,email,user_id from tb_user where is_delete=0";
 
@@ -107,15 +107,15 @@ namespace order.Repository
                 var userDetails = await connection.QueryFirstOrDefaultAsync(getQuery, parameter);
                 if (userDetails != null)
                 {
-                    var encryptPasswordtoDecrpt= userDetails.password;
+                    var encryptPasswordtoDecrpt = userDetails.password;
                     var decryPassword = SecurityUtils.DecryptString(encryptPasswordtoDecrpt.ToString());
-                    if ((password+userDetails.email) == decryPassword)
+                    if (password + userDetails.email == decryPassword)
                     {
                         var tokenUtilities = new TokenUtil(_configuration);
-                        if (adminOrNot==1)
+                        if (adminOrNot == 1)
                         {
-                           if(userDetails.user_id == "569806b1-3379-11ef-afb3-00224dae2257")
-                           {
+                            if (userDetails.user_id == "569806b1-3379-11ef-afb3-00224dae2257")
+                            {
                                 var token = tokenUtilities.GetToken(userDetails.user_id);
 
                                 if (token != null)
@@ -128,7 +128,7 @@ namespace order.Repository
                             return (false, StatusUtils.UNAUTHORIZED_ACCESS);
 
                         }
-                        else if(adminOrNot == 0)
+                        else if (adminOrNot == 0)
                         {
 
                             if (userDetails.user_id != "569806b1-3379-11ef-afb3-00224dae2257")
@@ -143,7 +143,7 @@ namespace order.Repository
                                 return (false, StatusUtils.FAILED);
                             }
                             return (false, StatusUtils.UNAUTHORIZED_ACCESS);
-                            
+
 
                         }
                         return (false, StatusUtils.UNAUTHORIZED_ACCESS);
@@ -152,12 +152,12 @@ namespace order.Repository
                     return (false, StatusUtils.INVALID_PASSWORD);
 
                 }
-                else 
+                else
                 {
-                       return (false, StatusUtils.INVALID_PHONE_OR_EMAIL);
+                    return (false, StatusUtils.INVALID_PHONE_OR_EMAIL);
                 }
-                
-                return (false,StatusUtils.FAILED);
+
+                return (false, StatusUtils.FAILED);
             }
         }
 
@@ -167,22 +167,22 @@ namespace order.Repository
             var updateQuery = "update tb_user set password=@password where user_id=@userId;" +
                 "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
             var getEmail = "select email from tb_user where user_id=@userId";
-            var user_id = SecurityUtils.DecryptString(data);
-            if(user_id != null)
+            var user_id = DecryptString(data);
+            if (user_id != null)
             {
                 using (var connection = _dapperContext.CreateConnection())
                 {
-                   
-                    
-                        var email = await connection.QueryAsync<string>(getEmail, new { userId= user_id });
-                        var encryptPassword = SecurityUtils.EncryptString(password + email.FirstOrDefault());
-                        var status = await connection.ExecuteScalarAsync<int>(updateQuery, new { password = encryptPassword, userId = user_id });
-                        if (status > 0)
-                        {
-                            return (true, StatusUtils.SUCCESS);
-                        }
-                        return (false, StatusUtils.UPDATION_FAILED);
-                    
+
+
+                    var email = await connection.QueryAsync<string>(getEmail, new { userId = user_id });
+                    var encryptPassword = EncryptString(password + email.FirstOrDefault());
+                    var status = await connection.ExecuteScalarAsync<int>(updateQuery, new { password = encryptPassword, userId = user_id });
+                    if (status > 0)
+                    {
+                        return (true, StatusUtils.SUCCESS);
+                    }
+                    return (false, StatusUtils.UPDATION_FAILED);
+
 
                 }
             }
@@ -192,16 +192,16 @@ namespace order.Repository
 
         public async Task<(bool, string)> VarificationOtp(string data, int otp)
         {
-            EncryptvalueModel decryptedData = SecurityUtils.DecryptModel(data);
+            EncryptvalueModel decryptedData = DecryptModel(data);
             if (decryptedData != null)
             {
-                
+
                 var timeDifference = DateTime.Now - decryptedData.CurrentDate;
-                    if (timeDifference.TotalMinutes < 5)
+                if (timeDifference.TotalMinutes < 5)
                 {
                     if (decryptedData.value == otp.ToString())
                     {
-                        return (true, SecurityUtils.EncryptString(decryptedData.userDeatils));
+                        return (true, EncryptString(decryptedData.userDeatils));
                     }
                     return (false, StatusUtils.INVALID_OTP);
                 }
@@ -210,6 +210,6 @@ namespace order.Repository
             return (false, StatusUtils.UNAUTHORIZED_ACCESS);
 
         }
-        
+
     }
 }

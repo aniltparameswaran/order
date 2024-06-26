@@ -1,6 +1,6 @@
 ﻿namespace order.DTOModel
 {
-    public class ShopDTOModel
+    public class UpdateShopDTOModel
     {
         public string shop_name { get; set; }
         public string address { get; set; }
@@ -10,6 +10,5 @@
         public decimal logitude { get; set; }
         public string phone { get; set; }
         public string email { get; set; }
-        public string lisense_number { get; set; }
     }
 }

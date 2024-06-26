@@ -1,12 +1,12 @@
 ﻿using Dapper;
 using order.Context;
 using order.DTOModel;
-using order.IRepository;
+using order.IRepository.IAdminRepositorys;
 using order.Models;
 using order.Utils;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace order.Repository
+namespace order.Repository.AdminRepository
 {
     public class ProductRepo : IProductRepo
     {
@@ -16,7 +16,7 @@ namespace order.Repository
         public ProductRepo(DapperContext dapperContext, IBrandRepo brandRepo)
         {
             _dapperContext = dapperContext;
-            _brandRepo = brandRepo; 
+            _brandRepo = brandRepo;
         }
         public static string IncrementNumber(string input)
         {
@@ -26,12 +26,12 @@ namespace order.Repository
             {
                 throw new ArgumentException("Input string does not contain a number.");
             }
-           
+
             string prefix = input.Substring(0, numberStartIndex);
             string numberPart = input.Substring(numberStartIndex);
             if (int.TryParse(numberPart, out int number))
             {
-               
+
                 number++;
                 string newNumberPart = number.ToString(new string('0', numberPart.Length));
                 return prefix + newNumberPart;
@@ -42,13 +42,13 @@ namespace order.Repository
             }
         }
 
-        public async Task<string> InsertProduct(ProductMasterDTOModel productMasterDTOModel)
+        public async Task<(bool, string)> InsertProduct(ProductMasterDTOModel productMasterDTOModel)
         {
             var insertProductMaster = "INSERT INTO tb_product_master(product_master_id,product_code,brand_id,sleeve,product_type) " +
                 "VALUES(@productMasterUUID,@product_code,@brand_id,@sleeve,@product_type); " +
                 " SELECT @productMasterUUID AS LastInsertedId;";
 
-            var insertProductDetails= "INSERT INTO tb_product_details(product_details_id,product_master_id,available_quantity,rate,discount,description) " +
+            var insertProductDetails = "INSERT INTO tb_product_details(product_details_id,product_master_id,available_quantity,rate,discount,description) " +
                 "VALUES(@productDetailsUUID,@product_master_id,@available_quantity,@rate,@discount,@description); " +
                 "SELECT @productDetailsUUID;";
             var last_inserted_Code = "SELECT product_code FROM tb_product_master ORDER BY inserted_date DESC LIMIT 1;";
@@ -58,13 +58,18 @@ namespace order.Repository
             using (var connection = _dapperContext.CreateConnection())
             {
                 var brandId = "";
-                if(Guid.TryParse(productMasterDTOModel.brand_id, out _))
+                if (Guid.TryParse(productMasterDTOModel.brand_id, out _))
                 {
                     brandId = productMasterDTOModel.brand_id;
                 }
                 else
                 {
-                    brandId= await _brandRepo.InsertBrand(productMasterDTOModel.brand_id);
+                    var (brand_exist_user_id, brand_message) = await _brandRepo.IsBrandExist(productMasterDTOModel.brand_id);
+                    if (brand_exist_user_id != null)
+                    {
+                        brandId = brand_exist_user_id;
+                    }
+                    brandId = await _brandRepo.InsertBrand(productMasterDTOModel.brand_id);
                 }
                 var productCode = await connection.ExecuteScalarAsync<string>(last_inserted_Code);
                 var productMasterParameters = new DynamicParameters();
@@ -79,7 +84,7 @@ namespace order.Repository
                 var product_master_id = await connection.ExecuteScalarAsync<string>(insertProductMaster, productMasterParameters);
                 if (!string.IsNullOrEmpty(product_master_id))
                 {
-                   
+
                     if (productMasterDTOModel.ProductDetailsListl.Count() > 0)
                     {
                         foreach (var productDeatils in productMasterDTOModel.ProductDetailsListl)
@@ -100,21 +105,21 @@ namespace order.Repository
                             }
                             else
                             {
-                                 await connection.ExecuteAsync(deleteProductDetailById, new { product_master_id = product_master_id });
-                                 await connection.ExecuteAsync(deleteProductMasterById, new { product_master_id = product_master_id });
-                                return null;
+                                await connection.ExecuteAsync(deleteProductDetailById, new { product_master_id });
+                                await connection.ExecuteAsync(deleteProductMasterById, new { product_master_id });
+                                return (false, StatusUtils.FAILED);
                             }
                         }
-                       
+
                     }
                     else
                     {
-                        await connection.ExecuteAsync(deleteProductMasterById, new { product_master_id = product_master_id });
-                        return null;
+                        await connection.ExecuteAsync(deleteProductMasterById, new { product_master_id });
+                        return (false, StatusUtils.FAILED);
                     }
 
                 }
-                return product_master_id;
+                return (true, product_master_id);
             }
         }
 
@@ -325,5 +330,6 @@ namespace order.Repository
                 return company;
             }
         }
+
     }
 }

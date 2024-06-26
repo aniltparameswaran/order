@@ -1,31 +1,31 @@
 ﻿using Dapper;
 using order.Context;
 using order.DTOModel;
-using order.IRepository;
+using order.IRepository.IAdminRepositorys;
 using order.Models;
 using order.Utils;
 using System.Data;
 
 namespace order.Repository
 {
-    public class UserRepo :IUserRepo
+    public class EmployeeRepo :IEmployeeRepo
     {
         private readonly DapperContext _dapperContext;
         private readonly SecurityUtils _securityUtils;
 
-        public UserRepo(DapperContext dapperContext, SecurityUtils securityUtils)
+        public EmployeeRepo(DapperContext dapperContext, SecurityUtils securityUtils)
         {
             _dapperContext = dapperContext;
             _securityUtils = securityUtils;
         }
-        public async Task<string> UserRegistration(UserRegistrationDTOModel model)
+        public async Task<string> UserRegistration(EmployeeRegistrationDTOModel model)
         {
             try
             {
 
                 var user_detail_insert_query = "INSERT INTO tb_user" +
-                 "(user_id,user_name, address, phone, email, pin,adhaaar_no, password)" +
-                 "VALUES (@userUUID,@user_name, @address, @phone, @email, @pin, @adhaaar_no, @password);" +
+                 "(user_id,user_name, address, phone, email, pin,adhaar_no, password)" +
+                 "VALUES (@userUUID,@user_name, @address, @phone, @email, @pin, @adhaar_no, @password);" +
                  "SELECT @userUUID;";
 
                 using (var connection = _dapperContext.CreateConnection())
@@ -40,7 +40,7 @@ namespace order.Repository
                     parameter.Add("email", model.email);
                     parameter.Add("phone", model.phone);
                     parameter.Add("pin", model.pin);
-                    parameter.Add("adhaaar_no", model.adhaaar_no);
+                    parameter.Add("adhaar_no", model.adhaar_no);
                     parameter.Add("password", encrypted_password);
 
                     var last_inserted_id = await connection.ExecuteScalarAsync<string>(user_detail_insert_query, parameter);
@@ -68,50 +68,7 @@ namespace order.Repository
             }
 
         }
-        public async Task<(string, string)> IsEmailExist(string email)
-        {
-            try
-            {
-                var query = "select user_id from tb_user where email = @email";
-                using (var connection = _dapperContext.CreateConnection())
-                {
-                    var parameters = new DynamicParameters();
-                    parameters.Add("email", email);
-                    var user_id = await connection.QuerySingleOrDefaultAsync<string>(query, parameters);
-                    if (!string.IsNullOrEmpty(user_id))
-                    {
-                        return (user_id, StatusUtils.EMAIL_ALREADY_EXIST);
-                    }
-                    return (null, StatusUtils.EMAIL_NOT_EXIST);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error occur while Email checking");
-            }
-        }
-        public async Task<(string, string)> IsPhoneNumberExist(string phone)
-        {
-            try
-            {
-                var query = "select user_id from tb_user where phone=@phone;";
-                using (var connection = _dapperContext.CreateConnection())
-                {
-                    var parameters = new DynamicParameters();
-                    parameters.Add("phone", phone);
-                    var user_id = await connection.ExecuteScalarAsync<string>(query, parameters);
-                    if (!string.IsNullOrEmpty(user_id))
-                    {
-                        return (user_id, StatusUtils.PHONE_NUMBER_ALREADY_EXIST);
-                    }
-                    return (null, StatusUtils.PHONE_NUMBER_NOT_EXIST);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error occur while phone number checking");
-            }
-        }
+       
 
         public async Task<(bool,string)> DeleteUser(string userId, int action)
         {
@@ -197,7 +154,7 @@ namespace order.Repository
             try
             {
                 var user_details_query = "select user_id,user_name,email,phone," +
-                    "address,pin,adhaar_no,is_active  from tb_user where is_delete = 0 and user_id!=1;";
+                    "address,pin,adhaar_no,is_active  from tb_user where is_delete = 0 and user_id!='569806b1-3379-11ef-afb3-00224dae2257';";
                 using (var connection = _dapperContext.CreateConnection())
                 {
                     var user_details = await connection.QuerySingleOrDefaultAsync<UserdetailsModel>(user_details_query);
@@ -209,7 +166,7 @@ namespace order.Repository
                 throw new Exception("Error occur while retrieve user details");
             }
         }
-        public async Task<int> UpdateUserByAdmin(UserUpdateDTOModel model, string user_id)
+        public async Task<int> UpdateEmployee(EmployeeUpdateDTOModel model, string user_id)
         {
             try
             {
@@ -235,31 +192,6 @@ namespace order.Repository
                 throw new Exception("Error occur while update user");
             }
         }
-        public async Task<int> UpdateUserByUser(string phone, string email, string user_id)
-        {
-            try
-            {
-                var user_update_query = "update tb_user SET phone=@phone," +
-                    "email=@email,updated_date=NOW() where user_id=@user_id;" +
-                    "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
-                using (var connection = _dapperContext.CreateConnection())
-                {
-                    var parameters = new DynamicParameters();
-                    parameters.Add("phone", phone);
-                    parameters.Add("email", email);
-                    parameters.Add("user_id", user_id);
-
-                    var update_user = await connection.ExecuteScalarAsync<int>
-                      (user_update_query, parameters);
-                   
-                    return update_user;
-                }
-
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error occur while update user");
-            }
-        }
+        
     }
 }

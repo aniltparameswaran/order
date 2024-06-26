@@ -2,44 +2,47 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using order.DTOModel;
-using order.IRepository;
+using order.IRepository.IAdminRepositorys;
 using order.Repository;
 using order.Utils;
 
-namespace order.Controllers
+namespace order.Controllers.AdminController
 {
-    /*[Authorize]*/
+    [Authorize]
     [Route("api/brand")]
     [ApiController]
     public class BrandController : ControllerBase
     {
         private readonly IBrandRepo _brandRepo;
+        private readonly string adminId = "569806b1-3379-11ef-afb3-00224dae2257";
         public BrandController(IBrandRepo brandRepo)
         {
             _brandRepo = brandRepo;
         }
         [HttpPost]
+        [Route("add-brand")]
         public async Task<IActionResult> InsertBrand(string brand_name)
         {
             try
             {
-               /* var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != 1)
+                if (userId != adminId)
                 {
-                    return Unauthorized(new { data = string.Empty, message = "Unauthorized access" });
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
                 var (brand_exist_user_id, brand_message) = await _brandRepo.IsBrandExist(brand_name);
-                if (brand_exist_user_id != 0)
+                if (brand_exist_user_id != null)
                 {
                     return BadRequest(new { data = string.Empty, message = brand_message });
-                }*/
-                
+                }
+
                 var last_inserted_id = await _brandRepo.InsertBrand(brand_name);
-                if (last_inserted_id !="")
+                if (last_inserted_id != "")
                 {
                     return Ok(new { data = last_inserted_id, message = StatusUtils.SUCCESS });
                 }
@@ -52,25 +55,27 @@ namespace order.Controllers
         }
 
         [HttpDelete]
+        [Route("delete-brand")]
         public async Task<IActionResult> DeleteUser(string brand_id, int action)
         {
             try
             {
-                var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != 1)
+                if (userId != adminId)
                 {
-                    return Unauthorized(new { data = string.Empty, message = "Unauthorized access" });
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
                 var (delete_status, message) = await _brandRepo.DeleteBrand(brand_id, action);
                 if (delete_status)
                 {
-                    return Ok(new { data = string.Empty, message = message });
+                    return Ok(new { data = string.Empty, message });
                 }
-                return BadRequest(new { data = string.Empty, message = message });
+                return BadRequest(new { data = string.Empty, message });
             }
             catch (Exception ex)
             {
@@ -78,21 +83,22 @@ namespace order.Controllers
             }
         }
 
-       
+
         [HttpPut]
         [Route("update-brand")]
         public async Task<IActionResult> UpdateUserByUser(string brand_name, string brand_id)
         {
             try
             {
-                var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != 1)
+                if (userId != adminId)
                 {
-                    return Unauthorized(new { data = string.Empty, message = "Unauthorized access" });
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
 
                 var (brand_exist_user_id, brand_message) = await _brandRepo.IsBrandExist(brand_name);
@@ -104,7 +110,7 @@ namespace order.Controllers
                     }
                 }
 
-               
+
                 var update_status = await _brandRepo.UpdateBrandName(brand_name, brand_id);
                 if (update_status > 0)
                 {

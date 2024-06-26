@@ -1,11 +1,11 @@
 ﻿using order.DTOModel;
 using order.Models;
 
-namespace order.IRepository
+namespace order.IRepository.IAdminRepositorys
 {
     public interface IProductRepo
     {
-        public Task<string> InsertProduct(ProductMasterDTOModel productMasterDTOModel);
+        public Task<(bool, string)> InsertProduct(ProductMasterDTOModel productMasterDTOModel);
         public Task<int> UpdateProductMaster(ProductMasterUpdateDTOModel productMasterUpdateDTOModel, string product_master_id);
         public Task<int> UpdateProductDetail(ProductDetailsUpdateDTOModel productDetailsUpdateDTOModel, string product_details_id);
         public Task<(bool, string)> DeleteProductDetail(string product_master_id, long action);

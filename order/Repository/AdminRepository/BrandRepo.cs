@@ -1,10 +1,10 @@
 ﻿using Dapper;
 using order.Context;
-using order.IRepository;
+using order.IRepository.IAdminRepositorys;
 using order.Models;
 using order.Utils;
 
-namespace order.Repository
+namespace order.Repository.AdminRepository
 {
     public class BrandRepo : IBrandRepo
     {
@@ -94,7 +94,7 @@ namespace order.Repository
 
                     if (!string.IsNullOrEmpty(last_inserted_id))
                     {
-                        
+
                         return last_inserted_id;
                     }
                     return last_inserted_id;
@@ -111,7 +111,7 @@ namespace order.Repository
         {
             try
             {
-                var query = "select brand_id from tb_brand where brand_name = @brand_name";
+                var query = "select brand_id from tb_brand where brand_name = @brand_name and is_delete=0;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
                     var parameters = new DynamicParameters();

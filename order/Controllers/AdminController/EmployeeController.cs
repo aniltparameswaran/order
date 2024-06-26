@@ -3,22 +3,30 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MySqlX.XDevAPI.Common;
 using order.DTOModel;
-using order.IRepository;
+using order.IRepository.ICommonRepositorys;
+using order.IRepository.IAdminRepositorys;
+using order.Repository.CommonRepository;
 using order.Utils;
 
-namespace order.Controllers
+namespace order.Controllers.AdminController
 {
-    [Route("api/user")]
+    [Route("api/employee")]
     [ApiController]
-    public class UserController : ControllerBase
+    [Authorize]
+    public class EmployeeController : ControllerBase
     {
-        private readonly IUserRepo _userRepo;
-        public UserController(IUserRepo userRepo)
+        private readonly IEmployeeRepo _employeRepo;
+        private readonly ICheckRepo _checkRepo;
+        private readonly string adminId = "569806b1-3379-11ef-afb3-00224dae2257";
+        public EmployeeController(IEmployeeRepo employeRepo, ICheckRepo checkRepo)
         {
-            _userRepo = userRepo;
+            _employeRepo = employeRepo;
+            _checkRepo = checkRepo;
         }
         [HttpPost]
-        public async Task<IActionResult> UserRegistration(UserRegistrationDTOModel model)
+
+        [Route("employee-registration")]
+        public async Task<IActionResult> UserRegistration(EmployeeRegistrationDTOModel model)
         {
             try
             {
@@ -29,13 +37,22 @@ namespace order.Controllers
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                var (phone_number_exist_user_id, phone_number_message) = await _userRepo.IsPhoneNumberExist(model.phone);
+                if (userId != adminId)
+                {
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
+                var (phone_number_exist_user_id, phone_number_message) = await _checkRepo.IsPhoneNumberExist(model.phone);
                 if (phone_number_exist_user_id != null)
                 {
                     return BadRequest(new { data = string.Empty, message = phone_number_message });
                 }
-                var request_status = await _userRepo.UserRegistration(model);
-                if (request_status !=null)
+                var (email_exist_user_id, email_message) = await _checkRepo.IsEmailExist(model.email);
+                if (email_exist_user_id != null)
+                {
+                    return BadRequest(new { data = string.Empty, message = email_message });
+                }
+                var request_status = await _employeRepo.UserRegistration(model);
+                if (request_status != null)
                 {
                     return Ok(new { data = string.Empty, message = StatusUtils.SUCCESS });
                 }
@@ -48,17 +65,27 @@ namespace order.Controllers
         }
 
         [HttpDelete]
+        [Route("delete-employee")]
         public async Task<IActionResult> DeleteUser(string user_id, int action)
         {
             try
             {
-
-                var (delete_status, message) = await _userRepo.DeleteUser(user_id, action);
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
+                }
+                if (userId != adminId)
+                {
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
+                var (delete_status, message) = await _employeRepo.DeleteUser(user_id, action);
                 if (delete_status)
                 {
-                    return Ok(new { data = string.Empty, message = message });
+                    return Ok(new { data = string.Empty, message });
                 }
-                return BadRequest(new { data = string.Empty, message = message });
+                return BadRequest(new { data = string.Empty, message });
             }
             catch (Exception ex)
             {
@@ -68,7 +95,7 @@ namespace order.Controllers
 
         [Authorize]
         [HttpGet]
-        [Route("get-user-all-details")]
+        [Route("get-employee-all-details")]
         public async Task<IActionResult> GetUserDetails()
         {
             try
@@ -79,12 +106,12 @@ namespace order.Controllers
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != "569806b1-3379-11ef-afb3-00224dae2257")
+                if (userId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
 
-                var user_details = await _userRepo.GetAllUserDetails();
+                var user_details = await _employeRepo.GetAllUserDetails();
                 if (user_details == null)
                 {
                     return NotFound(new { data = string.Empty, message = "No user found" });
@@ -99,21 +126,22 @@ namespace order.Controllers
         }
 
         [HttpGet]
-        [Route("get-user-details-by-user-id")]
+        [Route("get-employee-details-by-user-id")]
         public async Task<IActionResult> GetUserDetails(string user_id)
         {
             try
             {
-                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
                 if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-               
-
-
-                var user_details = await _userRepo.GetUserDetailsByUserId(user_id);
+                if (userId != adminId)
+                {
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
+                var user_details = await _employeRepo.GetUserDetailsByUserId(user_id);
                 if (user_details == null)
                 {
                     return NotFound(new { data = string.Empty, message = "User not found" });
@@ -129,8 +157,8 @@ namespace order.Controllers
 
         [Authorize]
         [HttpPut]
-        [Route("update-user-by-admin")]
-        public async Task<IActionResult> UpdateUserByAdmin(UserUpdateDTOModel model, string user_id)
+        [Route("update-employee-by-admin")]
+        public async Task<IActionResult> UpdateUserByAdmin(EmployeeUpdateDTOModel model, string user_id)
         {
             try
             {
@@ -141,11 +169,11 @@ namespace order.Controllers
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId == "569806b1-3379-11ef-afb3-00224dae2257")
+                if (userId == adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = "Unauthorized" });
                 }
-                var update_status = await _userRepo.UpdateUserByAdmin(model, user_id);
+                var update_status = await _employeRepo.UpdateEmployee(model, user_id);
                 if (update_status > 0)
                 {
                     return Ok(new { data = string.Empty, message = "Successfully  update user" });
@@ -157,55 +185,6 @@ namespace order.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-
-        [Authorize]
-        [HttpPut]
-        [Route("update-user-by-user")]
-        public async Task<IActionResult> UpdateUserByUser(string phone, string email)
-        {
-            try
-            {
-                var userIdClaimed = HttpContext.User.FindFirst("user_id");
-                var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
-                }
-
-                var (phone_number_exist_user_id, phone_number_message) = await _userRepo.IsPhoneNumberExist(phone);
-                if (phone_number_exist_user_id != null)
-                {
-                    if (phone_number_exist_user_id != userId)
-                    {
-                        return BadRequest(new { data = string.Empty, message = phone_number_message });
-                    }
-                }
-
-                var (email_exist_user_id, email_message) = await _userRepo.IsEmailExist(email);
-                if (email_exist_user_id != null)
-                {
-                    if (email_exist_user_id != userId)
-                    {
-                        return BadRequest(new { data = string.Empty, message = email_message });
-                    }
-                }
-                var update_status = await _userRepo.UpdateUserByUser(phone, email, userId);
-                if (update_status > 0)
-                {
-                    return Ok(new { data = string.Empty, message = "Successfully  update user" });
-                }
-
-
-                return BadRequest(new { data = string.Empty, message = "Fail to update user" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-
-
 
     }
 }

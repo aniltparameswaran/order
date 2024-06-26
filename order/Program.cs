@@ -3,9 +3,16 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
-using order.IRepository;
-using order.Repository;
 using order.Utils;
+using order.Models;
+using System.Configuration;
+using order.IRepository.IAdminRepositorys;
+using order.IRepository.ICommonRepositorys;
+using order.IRepository.IUserRepoRepository;
+using order.Repository.CommonRepository;
+using order.Repository.AdminRepository;
+using order.Repository.UserRepository;
+using order.Repository;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -15,15 +22,20 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<DapperContext>();
+builder.Services.AddScoped<IEmployeeRepo, EmployeeRepo>();
 builder.Services.AddScoped<IUserRepo, UserRepo>();
 builder.Services.AddScoped<IAuthRepo, AuthRepo>();
 builder.Services.AddScoped<IBrandRepo, BrandRepo>();
 builder.Services.AddScoped<IProductRepo, ProductRepo>();
 builder.Services.AddScoped<IShopRepo, ShopRepo>();
 builder.Services.AddSingleton<SecurityUtils>();
+
+
+
 builder.Services.AddCors(options => {
     options.AddPolicy("CORSPolicy", builder => builder.AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed((hosts) => true));
 });
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -81,14 +93,9 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-
 
 app.UseSwagger();
 app.UseSwaggerUI();
-
-
-
 
 app.UseCors("CORSPolicy");
 app.UseRouting();

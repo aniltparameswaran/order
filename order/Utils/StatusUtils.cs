@@ -46,5 +46,6 @@
         public const string IS_DELETE_UPDATEDTION_SUCCESS = "is_delete updation Success";
         public const string TESTER_MOBILE_NO = "0000987654";
         public const int TESTER_DEFAULT_OPT = 5497;
+        public const string ALREADY_SHOP_IS_ADDED = "Already shop is added";
     }
 }

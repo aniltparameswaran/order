@@ -1,6 +1,6 @@
 ﻿using order.DTOModel;
 
-namespace order.IRepository
+namespace order.IRepository.IAdminRepositorys
 {
     public interface IBrandRepo
     {

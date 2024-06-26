@@ -1,6 +1,6 @@
 ﻿namespace order.DTOModel
 {
-    public class UserUpdateDTOModel
+    public class EmployeeUpdateDTOModel
     {
         public string user_name { get; set; }
         public string address { get; set; }
