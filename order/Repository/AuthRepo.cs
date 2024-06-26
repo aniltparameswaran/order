@@ -32,7 +32,7 @@ namespace order.Repository
             using(var connection=_dapperContext.CreateConnection())
             {
                 var otp = StringUtils.GenerateRandomOTP(4);
-                var userId = 0;
+                var userId ="";
                 var parameter = new DynamicParameters();
 
                 if (IsEmail(userName))
@@ -57,10 +57,10 @@ namespace order.Repository
                     return (false, StatusUtils.USER_NOT_FOUND);
                 }
                 
-                if (userId >0)
+                if (userId !=null)
                 {
-                    var encrryptUserId = SecurityUtils.EncryptString(userId.ToString());
-                    var encrypted_otp = SecurityUtils.EncryptModel(otp, encrryptUserId);
+                   
+                    var encrypted_otp = SecurityUtils.EncryptModel(otp, userId.ToString());
                     var name = userDeatils.user_name;
                     EmailModel mail = new EmailModel();
                     mail.from_email_password = "kgwo ymcv ravu vltr";
@@ -82,7 +82,7 @@ namespace order.Repository
             throw new NotImplementedException();
         }
 
-        public async Task<(bool, string)> Login(string userName, string password)
+        public async Task<(bool, string)> Login(string userName, string password,int adminOrNot)
         {
             var getQuery = "select password,email,user_id from tb_user where is_delete=0";
 
@@ -111,14 +111,43 @@ namespace order.Repository
                     var decryPassword = SecurityUtils.DecryptString(encryptPasswordtoDecrpt.ToString());
                     if ((password+userDetails.email) == decryPassword)
                     {
-                            var tokenUtilities = new TokenUtil(_configuration);
-                            var token = tokenUtilities.GetToken(userDetails.user_id);
-                           
-                            if (token != null)
-                            {
-                                return (true, token);
-                                
+                        var tokenUtilities = new TokenUtil(_configuration);
+                        if (adminOrNot==1)
+                        {
+                           if(userDetails.user_id == "569806b1-3379-11ef-afb3-00224dae2257")
+                           {
+                                var token = tokenUtilities.GetToken(userDetails.user_id);
+
+                                if (token != null)
+                                {
+                                    return (true, token);
+
+                                }
+                                return (false, StatusUtils.FAILED);
                             }
+                            return (false, StatusUtils.UNAUTHORIZED_ACCESS);
+
+                        }
+                        else if(adminOrNot == 0)
+                        {
+
+                            if (userDetails.user_id != "569806b1-3379-11ef-afb3-00224dae2257")
+                            {
+                                var token = tokenUtilities.GetToken(userDetails.user_id);
+
+                                if (token != null)
+                                {
+                                    return (true, token);
+
+                                }
+                                return (false, StatusUtils.FAILED);
+                            }
+                            return (false, StatusUtils.UNAUTHORIZED_ACCESS);
+                            
+
+                        }
+                        return (false, StatusUtils.UNAUTHORIZED_ACCESS);
+
                     }
                     return (false, StatusUtils.INVALID_PASSWORD);
 
@@ -132,6 +161,7 @@ namespace order.Repository
             }
         }
 
+
         public async Task<(bool, string)> RestPassword(string data, string password)
         {
             var updateQuery = "update tb_user set password=@password where user_id=@userId;" +
@@ -142,19 +172,17 @@ namespace order.Repository
             {
                 using (var connection = _dapperContext.CreateConnection())
                 {
-                    var userId = SecurityUtils.DecryptString(user_id);
-                    if(userId != null)
-                    {
-                        var email = await connection.QueryAsync<string>(getEmail, new { userId });
+                   
+                    
+                        var email = await connection.QueryAsync<string>(getEmail, new { userId= user_id });
                         var encryptPassword = SecurityUtils.EncryptString(password + email.FirstOrDefault());
-                        var status = await connection.ExecuteScalarAsync<int>(updateQuery, new { password = encryptPassword, userId = userId });
+                        var status = await connection.ExecuteScalarAsync<int>(updateQuery, new { password = encryptPassword, userId = user_id });
                         if (status > 0)
                         {
                             return (true, StatusUtils.SUCCESS);
                         }
                         return (false, StatusUtils.UPDATION_FAILED);
-                    }
-                    return (false, StatusUtils.UNAUTHORIZED_ACCESS);
+                    
 
                 }
             }

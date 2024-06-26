@@ -11,10 +11,12 @@ namespace order.Repository
     public class ProductRepo : IProductRepo
     {
         private readonly DapperContext _dapperContext;
+        private readonly IBrandRepo _brandRepo;
 
-        public ProductRepo(DapperContext dapperContext)
+        public ProductRepo(DapperContext dapperContext, IBrandRepo brandRepo)
         {
             _dapperContext = dapperContext;
+            _brandRepo = brandRepo; 
         }
         public static string IncrementNumber(string input)
         {
@@ -55,6 +57,15 @@ namespace order.Repository
 
             using (var connection = _dapperContext.CreateConnection())
             {
+                var brandId = "";
+                if(Guid.TryParse(productMasterDTOModel.brand_id, out _))
+                {
+                    brandId = productMasterDTOModel.brand_id;
+                }
+                else
+                {
+                    brandId= await _brandRepo.InsertBrand(productMasterDTOModel.brand_id);
+                }
                 var productCode = await connection.ExecuteScalarAsync<string>(last_inserted_Code);
                 var productMasterParameters = new DynamicParameters();
                 var productMasterUUID = Guid.NewGuid().ToString();
@@ -62,7 +73,7 @@ namespace order.Repository
                 string product_code = IncrementNumber(productCode);
                 productMasterParameters.Add("productMasterUUID", productMasterUUID);
                 productMasterParameters.Add("product_code", product_code);
-                productMasterParameters.Add("brand_id", productMasterDTOModel.brand_id);
+                productMasterParameters.Add("brand_id", brandId);
                 productMasterParameters.Add("sleeve", productMasterDTOModel.sleeve);
                 productMasterParameters.Add("product_type", productMasterDTOModel.product_type);
                 var product_master_id = await connection.ExecuteScalarAsync<string>(insertProductMaster, productMasterParameters);
@@ -142,8 +153,8 @@ namespace order.Repository
             try
             {
                 var product_master_update_query = "update tb_product_master SET brand_id=@brand_id," +
-                    "sleeve=@sleeve,discount=@discount,"+
-                    "updated_date=NOW() where product_details_id=@product_details_id;" +
+                    "sleeve=@sleeve,product_type=@product_type," +
+                    "updated_date=NOW() where product_master_id=@product_master_id;" +
                     "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
@@ -303,7 +314,7 @@ namespace order.Repository
 
         public async Task<GetProductDetailsByMasterId> GetProductDetailByMasterId(string product_master_id)
         {
-            var query = "SELECT * FROM tb_product_master WHERE product_master_id = @product_master_id;" +
+            var query = "SELECT * FROM tb_product_master WHERE product_master_id = @product_master_id and is_delete=0;" +
                 "SELECT * FROM tb_product_details WHERE product_master_id = @product_master_id and is_delete=0";
             using (var connection = _dapperContext.CreateConnection())
             using (var multi = await connection.QueryMultipleAsync(query, new { product_master_id }))

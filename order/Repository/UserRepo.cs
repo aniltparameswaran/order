@@ -18,21 +18,23 @@ namespace order.Repository
             _dapperContext = dapperContext;
             _securityUtils = securityUtils;
         }
-        public async Task<int> UserRegistration(UserRegistrationDTOModel model)
+        public async Task<string> UserRegistration(UserRegistrationDTOModel model)
         {
             try
             {
 
                 var user_detail_insert_query = "INSERT INTO tb_user" +
-                 "(user_name, address, phone, email, pin,adhaaar_no, password)" +
-                 "VALUES (@user_name, @address, @phone, @email, @pin, @adhaaar_no, @password);" +
-                 "SELECT LAST_INSERT_ID();";
+                 "(user_id,user_name, address, phone, email, pin,adhaaar_no, password)" +
+                 "VALUES (@userUUID,@user_name, @address, @phone, @email, @pin, @adhaaar_no, @password);" +
+                 "SELECT @userUUID;";
 
                 using (var connection = _dapperContext.CreateConnection())
                 {
                     var password = StringUtils.GenerateRandomString(7);
+                    var userUUID = Guid.NewGuid().ToString();
                     var encrypted_password = SecurityUtils.EncryptString(password+model.email);
                     var parameter = new DynamicParameters();
+                    parameter.Add("userUUID", userUUID);
                     parameter.Add("user_name", model.user_name);
                     parameter.Add("address", model.address);
                     parameter.Add("email", model.email);
@@ -41,9 +43,9 @@ namespace order.Repository
                     parameter.Add("adhaaar_no", model.adhaaar_no);
                     parameter.Add("password", encrypted_password);
 
-                    var last_inserted_id = await connection.ExecuteScalarAsync<int>(user_detail_insert_query, parameter);
+                    var last_inserted_id = await connection.ExecuteScalarAsync<string>(user_detail_insert_query, parameter);
                     var emailService = new CommunicationUtils();
-                    if (last_inserted_id > 0)
+                    if (!string.IsNullOrEmpty(last_inserted_id))
                     {
                         EmailModel mail = new EmailModel();
                         mail.from_email_password = "kgwo ymcv ravu vltr";
@@ -56,7 +58,7 @@ namespace order.Repository
                         bool status = emailService.SendMail(mail);
                         return last_inserted_id;
                     }
-                    return 0;
+                    return null;
                 }
 
             }
@@ -66,7 +68,7 @@ namespace order.Repository
             }
 
         }
-        public async Task<(int, string)> IsEmailExist(string email)
+        public async Task<(string, string)> IsEmailExist(string email)
         {
             try
             {
@@ -75,12 +77,12 @@ namespace order.Repository
                 {
                     var parameters = new DynamicParameters();
                     parameters.Add("email", email);
-                    var user_id = await connection.QuerySingleOrDefaultAsync<int>(query, parameters);
-                    if (user_id != 0)
+                    var user_id = await connection.QuerySingleOrDefaultAsync<string>(query, parameters);
+                    if (!string.IsNullOrEmpty(user_id))
                     {
                         return (user_id, StatusUtils.EMAIL_ALREADY_EXIST);
                     }
-                    return (0, StatusUtils.EMAIL_NOT_EXIST);
+                    return (null, StatusUtils.EMAIL_NOT_EXIST);
                 }
             }
             catch (Exception ex)
@@ -88,7 +90,7 @@ namespace order.Repository
                 throw new Exception("Error occur while Email checking");
             }
         }
-        public async Task<(int, string)> IsPhoneNumberExist(string phone)
+        public async Task<(string, string)> IsPhoneNumberExist(string phone)
         {
             try
             {
@@ -97,13 +99,12 @@ namespace order.Repository
                 {
                     var parameters = new DynamicParameters();
                     parameters.Add("phone", phone);
-                    var user_id = await connection.ExecuteScalarAsync<int>(query, parameters);
-                    if (user_id != 0)
-
+                    var user_id = await connection.ExecuteScalarAsync<string>(query, parameters);
+                    if (!string.IsNullOrEmpty(user_id))
                     {
                         return (user_id, StatusUtils.PHONE_NUMBER_ALREADY_EXIST);
                     }
-                    return (0, StatusUtils.PHONE_NUMBER_NOT_EXIST);
+                    return (null, StatusUtils.PHONE_NUMBER_NOT_EXIST);
                 }
             }
             catch (Exception ex)
@@ -112,7 +113,7 @@ namespace order.Repository
             }
         }
 
-        public async Task<(bool,string)> DeleteUser(int userId, int action)
+        public async Task<(bool,string)> DeleteUser(string userId, int action)
         {
             try
             {
@@ -141,7 +142,7 @@ namespace order.Repository
                         deleteQuery += "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
                         var parameters = new DynamicParameters();
                         parameters.Add("userId", userId);
-                        parameters.Add("updatedBy", userId);
+                        parameters.Add("updatedBy", 1);
                         var status = await connection.ExecuteAsync(deleteQuery, parameters);
                         if (status > 0)
                         {
@@ -171,7 +172,7 @@ namespace order.Repository
                 throw new Exception("Error occurred while deleting user.", ex);
             }
         }
-        public async Task<UserdetailsByIdModel> GetUserDetailsByUserId(int user_id)
+        public async Task<UserdetailsByIdModel> GetUserDetailsByUserId(string user_id)
         {
             try
             {
@@ -208,7 +209,7 @@ namespace order.Repository
                 throw new Exception("Error occur while retrieve user details");
             }
         }
-        public async Task<int> UpdateUserByAdmin(UserUpdateDTOModel model, int user_id)
+        public async Task<int> UpdateUserByAdmin(UserUpdateDTOModel model, string user_id)
         {
             try
             {
@@ -234,7 +235,7 @@ namespace order.Repository
                 throw new Exception("Error occur while update user");
             }
         }
-        public async Task<int> UpdateUserByUser(string phone, string email, int user_id)
+        public async Task<int> UpdateUserByUser(string phone, string email, string user_id)
         {
             try
             {

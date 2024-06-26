@@ -2,7 +2,7 @@
 {
     public class UserdetailsModel
     {
-        public int user_id { get; set; }
+        public string user_id { get; set; }
         public string user_name { get; set; }
         public string address { get; set; }
         public string? phone { get; set; }

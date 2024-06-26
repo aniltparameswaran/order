@@ -26,7 +26,7 @@ namespace order.Controllers
         {
             try
             {
-                    var (status, access_token) = await _authRepo.Login(userName ,password);
+                    var (status, access_token) = await _authRepo.Login(userName ,password,0);
                     if (status)
                     {
                         return Ok(new { data = access_token, message = "Successfully logged in " });
@@ -35,6 +35,27 @@ namespace order.Controllers
                
             }
                
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Route("admin-login")]
+        public async Task<IActionResult> AdminLogin(string userName, string password)
+        {
+            try
+            {
+                var (status, access_token) = await _authRepo.Login(userName, password,1);
+                if (status)
+                {
+                    return Ok(new { data = access_token, message = "Successfully logged in " });
+                }
+                return BadRequest(new { data = string.Empty, message = access_token });
+
+            }
+
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);

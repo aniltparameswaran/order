@@ -22,19 +22,20 @@ namespace order.Controllers
         {
             try
             {
-                
-                var (email_exist_user_id, email_message) = await _userRepo.IsEmailExist(model.email);
-                if (email_exist_user_id != 0)
+
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
-                    return BadRequest(new { data = string.Empty, message = email_message });
+                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
                 var (phone_number_exist_user_id, phone_number_message) = await _userRepo.IsPhoneNumberExist(model.phone);
-                if (phone_number_exist_user_id != 0)
+                if (phone_number_exist_user_id != null)
                 {
                     return BadRequest(new { data = string.Empty, message = phone_number_message });
                 }
                 var request_status = await _userRepo.UserRegistration(model);
-                if (request_status > 0)
+                if (request_status !=null)
                 {
                     return Ok(new { data = string.Empty, message = StatusUtils.SUCCESS });
                 }
@@ -47,11 +48,11 @@ namespace order.Controllers
         }
 
         [HttpDelete]
-        public async Task<IActionResult> DeleteUser(int user_id,int action)
+        public async Task<IActionResult> DeleteUser(string user_id, int action)
         {
             try
             {
-                
+
                 var (delete_status, message) = await _userRepo.DeleteUser(user_id, action);
                 if (delete_status)
                 {
@@ -72,12 +73,13 @@ namespace order.Controllers
         {
             try
             {
-                var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != 1)
+                if (userId != "569806b1-3379-11ef-afb3-00224dae2257")
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
@@ -98,15 +100,17 @@ namespace order.Controllers
 
         [HttpGet]
         [Route("get-user-details-by-user-id")]
-        public async Task<IActionResult> GetUserDetails(int user_id)
+        public async Task<IActionResult> GetUserDetails(string user_id)
         {
             try
             {
-                var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
+               
 
 
                 var user_details = await _userRepo.GetUserDetailsByUserId(user_id);
@@ -126,14 +130,20 @@ namespace order.Controllers
         [Authorize]
         [HttpPut]
         [Route("update-user-by-admin")]
-        public async Task<IActionResult> UpdateUserByAdmin(UserUpdateDTOModel model,int user_id)
+        public async Task<IActionResult> UpdateUserByAdmin(UserUpdateDTOModel model, string user_id)
         {
             try
             {
-                var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
+                }
+                if (userId == "569806b1-3379-11ef-afb3-00224dae2257")
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Unauthorized" });
                 }
                 var update_status = await _userRepo.UpdateUserByAdmin(model, user_id);
                 if (update_status > 0)
@@ -155,23 +165,24 @@ namespace order.Controllers
         {
             try
             {
-                var userIdClaim = HttpContext.User.FindFirst("user_id");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-               
+
                 var (phone_number_exist_user_id, phone_number_message) = await _userRepo.IsPhoneNumberExist(phone);
-                if (phone_number_exist_user_id != 0)
+                if (phone_number_exist_user_id != null)
                 {
                     if (phone_number_exist_user_id != userId)
                     {
                         return BadRequest(new { data = string.Empty, message = phone_number_message });
                     }
                 }
-                   
+
                 var (email_exist_user_id, email_message) = await _userRepo.IsEmailExist(email);
-                if (email_exist_user_id != 0)
+                if (email_exist_user_id != null)
                 {
                     if (email_exist_user_id != userId)
                     {
@@ -183,8 +194,8 @@ namespace order.Controllers
                 {
                     return Ok(new { data = string.Empty, message = "Successfully  update user" });
                 }
-               
-               
+
+
                 return BadRequest(new { data = string.Empty, message = "Fail to update user" });
             }
             catch (Exception ex)

@@ -218,7 +218,7 @@ namespace order.Controllers
                 var product_master_deatils = await _productRepo.GetProductDetailByMasterId(product_master_id);
                 if (product_master_deatils == null)
                 {
-                    return NotFound(new { data = string.Empty, message = "No user found" });
+                    return NotFound(new { data = string.Empty, message = "No product found" });
                 }
 
                 return Ok(product_master_deatils);
