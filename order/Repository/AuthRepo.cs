@@ -42,7 +42,7 @@ namespace order.Repository
                 }
                 else
                 {
-                    query += " phone_number = @username";
+                    query += " phone = @username";
                     parameter.Add("username", userName, DbType.String);
                 }
                 var emailService = new CommunicationUtils();
