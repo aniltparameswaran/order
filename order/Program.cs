@@ -53,7 +53,7 @@ builder.Services.AddEndpointsApiExplorer();
 // Swagger
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "VoiceFirst", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Order", Version = "v1" });
 
     // Add JWT authentication support to Swagger.
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
