@@ -5,6 +5,7 @@ using order.IRepository.ICommonRepositorys;
 using order.IRepository.IAdminRepositorys;
 using order.Repository;
 using order.Utils;
+using order.DTOModel;
 
 namespace order.Controllers.CommonControllers
 {
@@ -23,11 +24,11 @@ namespace order.Controllers.CommonControllers
         }
         [HttpPost]
         [Route("login")]
-        public async Task<IActionResult> Login(string user_name, string password)
+        public async Task<IActionResult> Login(LoginDTOModel loginDTOModel)
         {
             try
             {
-                var (status, access_token) = await _authRepo.Login(user_name, password, 0);
+                var (status, access_token) = await _authRepo.Login(loginDTOModel, 0);
                 if (status)
                 {
                     return Ok(new { data = access_token, message = "Successfully logged in " });
@@ -44,11 +45,11 @@ namespace order.Controllers.CommonControllers
 
         [HttpPost]
         [Route("admin-login")]
-        public async Task<IActionResult> AdminLogin(string user_name, string password)
+        public async Task<IActionResult> AdminLogin(LoginDTOModel loginDTOModel)
         {
             try
             {
-                var (status, access_token) = await _authRepo.Login(user_name, password, 1);
+                var (status, access_token) = await _authRepo.Login(loginDTOModel, 1);
                 if (status)
                 {
                     return Ok(new { data = access_token, message = "Successfully logged in " });

@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using order.Context;
+using order.DTOModel;
 using order.IRepository.ICommonRepositorys;
 using order.Models;
 using order.Utils;
@@ -82,7 +83,7 @@ namespace order.Repository.CommonRepository
             throw new NotImplementedException();
         }
 
-        public async Task<(bool, string)> Login(string userName, string password, int adminOrNot)
+        public async Task<(bool, string)> Login(LoginDTOModel loginDTOModel, int adminOrNot)
         {
             var getQuery = "select password,email,user_id from tb_user where is_delete=0";
 
@@ -94,22 +95,22 @@ namespace order.Repository.CommonRepository
                 }
                 var parameter = new DynamicParameters();
 
-                if (IsEmail(userName))
+                if (IsEmail(loginDTOModel.user_name))
                 {
                     getQuery += " and email = @username";
-                    parameter.Add("username", userName, DbType.String);
+                    parameter.Add("username", loginDTOModel.user_name, DbType.String);
                 }
                 else
                 {
                     getQuery += " and phone = @username";
-                    parameter.Add("username", userName, DbType.String);
+                    parameter.Add("username", loginDTOModel.user_name, DbType.String);
                 }
                 var userDetails = await connection.QueryFirstOrDefaultAsync(getQuery, parameter);
                 if (userDetails != null)
                 {
                     var encryptPasswordtoDecrpt = userDetails.password;
                     var decryPassword = SecurityUtils.DecryptString(encryptPasswordtoDecrpt.ToString());
-                    if (password + userDetails.email == decryPassword)
+                    if (loginDTOModel.password + userDetails.email == decryPassword)
                     {
                         var tokenUtilities = new TokenUtil(_configuration);
                         if (adminOrNot == 1)
