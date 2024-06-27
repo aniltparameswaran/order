@@ -74,7 +74,7 @@ namespace order.Controllers.UserController
             }
         }*/
 
-        [HttpPost]
+        [HttpGet]
         [Route("get-shop-list")]
         public async Task<IActionResult> GetShopList()
         {
@@ -99,7 +99,7 @@ namespace order.Controllers.UserController
             }
         }
 
-        [HttpPost]
+        [HttpGet]
         [Route("get-shop-details-by-shop-id")]
         public async Task<IActionResult> GetShopDetailByShopId(string shop_id)
         {
