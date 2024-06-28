@@ -86,7 +86,7 @@ namespace order.Controllers.CommonControllers
             }
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("varification-otp")]
         public async Task<IActionResult> VarificationOtp(CheckOtpDTOModel checkOtpDTOModel)
         {
