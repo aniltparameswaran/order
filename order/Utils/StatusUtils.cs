@@ -41,6 +41,7 @@
         public const string INVALID_PASSWORD = "Invalid Password";
         public const string INVALID_PHONE = "Invalid PHONE";
         public const string INVALID_EMAIL = "Invalid EMAIL";
+        public const string QUANTITY_NOT_AVAILABLE = "Quantity not available";
         public const string INVALID_PHONE_OR_EMAIL = "Invalid phone number or email";
         public const string INVALID_ADHAAR_NO = "Invalid ADHAAR no";
         public const string IS_ACTIVE_UPDATEDTION_SUCCESS = "is_active updation Success";

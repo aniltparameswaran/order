@@ -88,12 +88,12 @@ namespace order.Controllers.CommonControllers
 
         [HttpGet]
         [Route("varification-otp")]
-        public async Task<IActionResult> VarificationOtp(string data, int otp)
+        public async Task<IActionResult> VarificationOtp(CheckOtpDTOModel checkOtpDTOModel)
         {
             try
             {
 
-                var (status, massage) = await _authRepo.VarificationOtp(data, otp);
+                var (status, massage) = await _authRepo.VarificationOtp(checkOtpDTOModel.data, checkOtpDTOModel.otp);
                 if (status)
                 {
                     return Ok(new { data = massage, message = StatusUtils.SUCCESS });
@@ -111,12 +111,12 @@ namespace order.Controllers.CommonControllers
 
         [HttpPut]
         [Route("reset-password")]
-        public async Task<IActionResult> RestPassword(string data, string password)
+        public async Task<IActionResult> RestPassword(UpdatePasswordDTOModel updatePasswordDTOModel)
         {
             try
             {
 
-                var (status, message) = await _authRepo.RestPassword(data, password);
+                var (status, message) = await _authRepo.RestPassword(updatePasswordDTOModel.data, updatePasswordDTOModel.password);
                 if (status)
                 {
                     return Ok(new { data = string.Empty, message });

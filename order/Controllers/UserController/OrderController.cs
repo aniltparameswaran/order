@@ -33,12 +33,12 @@ namespace order.Controllers.UserController
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
                 
-                var last_inserted_id = await _orderRepo.InsertOrder(orderMasterDTOModel, userId);
-                if (last_inserted_id != "")
+                var (last_inserted_id,message) = await _orderRepo.InsertOrder(orderMasterDTOModel, userId);
+                if (last_inserted_id != null)
                 {
-                    return Ok(new { data = last_inserted_id, message = StatusUtils.SUCCESS });
+                    return Ok(new { data = last_inserted_id, message = message });
                 }
-                return BadRequest(new { data = string.Empty, message = StatusUtils.NOT_REGISTERED });
+                return BadRequest(new { data = string.Empty, message = message });
             }
             catch (Exception ex)
             {

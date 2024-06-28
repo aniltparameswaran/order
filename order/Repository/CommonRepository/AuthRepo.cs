@@ -16,6 +16,7 @@ namespace order.Repository.CommonRepository
     {
         private readonly DapperContext _dapperContext;
         private readonly IConfiguration _configuration;
+        private readonly string adminId= "569806b1-3379-11ef-afb3-00224dae2257";
         public AuthRepo(DapperContext dapperContext, IConfiguration configuration)
         {
             _dapperContext = dapperContext;
@@ -23,7 +24,6 @@ namespace order.Repository.CommonRepository
         }
         public bool IsEmail(string input)
         {
-
             return Regex.IsMatch(input, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
         }
         public async Task<(bool, string)> ForgotPassword(string userName)
@@ -115,7 +115,7 @@ namespace order.Repository.CommonRepository
                         var tokenUtilities = new TokenUtil(_configuration);
                         if (adminOrNot == 1)
                         {
-                            if (userDetails.user_id == "569806b1-3379-11ef-afb3-00224dae2257")
+                            if (userDetails.user_id == adminId )
                             {
                                 var token = tokenUtilities.GetToken(userDetails.user_id);
 
