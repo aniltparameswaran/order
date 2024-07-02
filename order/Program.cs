@@ -30,6 +30,7 @@ builder.Services.AddScoped<IBrandRepo, BrandRepo>();
 builder.Services.AddScoped<IProductRepo, ProductRepo>();
 builder.Services.AddScoped<IShopRepo, ShopRepo>();
 builder.Services.AddScoped<IOrderRepo, OrderRepo>();
+builder.Services.AddScoped<IItemRepo, ItemRepo>();
 builder.Services.AddSingleton<SecurityUtils>();
 
 

@@ -8,8 +8,8 @@ using order.Utils;
 
 namespace order.Controllers.UserController
 {
-    [Route("api/shop")]
     [Authorize]
+    [Route("api/shop")]
     [ApiController]
     public class ShopController : ControllerBase
     {
@@ -38,7 +38,7 @@ namespace order.Controllers.UserController
                 var shp_id = await _shopRepo.InsertShop(shopDTOModel, userId);
                 if (shp_id != null)
                 {
-                    return BadRequest(new { data = shp_id, message = StatusUtils.SUCCESS });
+                    return Ok(new { data = shp_id, message = StatusUtils.SUCCESS });
                 }
                 return BadRequest(new { data = string.Empty, message = StatusUtils.FAILED });
             }
@@ -89,7 +89,7 @@ namespace order.Controllers.UserController
                 var shpopList = await _shopRepo.GetShop(userId);
                 if (shpopList != null)
                 {
-                    return BadRequest(new { data = shpopList, message = StatusUtils.SUCCESS });
+                    return Ok(new { data = shpopList, message = StatusUtils.SUCCESS });
                 }
                 return BadRequest(new { data = string.Empty, message = StatusUtils.FAILED });
             }
@@ -114,7 +114,7 @@ namespace order.Controllers.UserController
                 var shop = await _shopRepo.GetShopDetailByShopId(shop_id,userId);
                 if (shop != null)
                 {
-                    return BadRequest(new { data = shop, message = StatusUtils.SUCCESS });
+                    return Ok(new { data = shop, message = StatusUtils.SUCCESS });
                 }
                 return BadRequest(new { data = string.Empty, message = StatusUtils.FAILED });
             }

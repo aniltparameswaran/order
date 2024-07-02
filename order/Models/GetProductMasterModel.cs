@@ -1,6 +1,6 @@
 ﻿namespace order.Models
 {
-    public class GetProductMaster
+    public class GetProductMasterModel
     {
         public string product_master_id { get; set; }
         public string product_code { get; set; }

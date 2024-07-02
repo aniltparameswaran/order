@@ -10,6 +10,6 @@ namespace order.Models
         public string product_type { get; set; }
         public string sleeve { get; set; }
         public int is_active { get; set; }
-        public List<GetProductDetails> ProductDetailsListl { get; set; } = new List<GetProductDetails>();
+        public List<GetProductDetailsModel> ProductDetailsListl { get; set; } = new List<GetProductDetailsModel>();
     }
 }

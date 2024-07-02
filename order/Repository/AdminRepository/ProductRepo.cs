@@ -299,7 +299,7 @@ namespace order.Repository.AdminRepository
             }
         }
 
-        public async Task<IEnumerable<GetProductMaster>> GetProductMaster()
+        public async Task<IEnumerable<GetProductMasterModel>> GetProductMaster()
         {
             try
             {
@@ -307,7 +307,7 @@ namespace order.Repository.AdminRepository
                     "product_type,is_active from tb_product_master where is_delete = 0;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
-                    var company_master_list = await connection.QueryAsync<GetProductMaster>(company_master_query);
+                    var company_master_list = await connection.QueryAsync<GetProductMasterModel>(company_master_query);
                     return company_master_list;
                 }
             }
@@ -326,7 +326,7 @@ namespace order.Repository.AdminRepository
             {
                 var company = await multi.ReadSingleOrDefaultAsync<GetProductDetailsByMasterId>();
                 if (company != null)
-                    company.ProductDetailsListl = (await multi.ReadAsync<GetProductDetails>()).ToList();
+                    company.ProductDetailsListl = (await multi.ReadAsync<GetProductDetailsModel>()).ToList();
                 return company;
             }
         }
