@@ -18,7 +18,7 @@ namespace order.Controllers.UserController
         }
         [HttpGet]
         [Route("get-item-list")]
-        public async Task<IActionResult> GetProductMaster()
+        public async Task<IActionResult> GetProductMaster(string item_code)
         {
             try
             {
@@ -28,13 +28,13 @@ namespace order.Controllers.UserController
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                var product_master_list = await _itemRepo.GetItem();
-                if (product_master_list == null)
+                var itemList = await _itemRepo.GetItem(item_code);
+                if (itemList.Count()==0)
                 {
-                    return NotFound(new { data = string.Empty, message = "No user found" });
+                    return NotFound(new { data = string.Empty, message = StatusUtils.QUANTITY_NOT_AVAILABLE });
                 }
 
-                return Ok(product_master_list);
+                return Ok(itemList);
             }
             catch (Exception ex)
             {
