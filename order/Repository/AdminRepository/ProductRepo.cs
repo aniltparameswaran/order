@@ -44,8 +44,8 @@ namespace order.Repository.AdminRepository
 
         public async Task<(bool, string)> InsertProduct(ProductMasterDTOModel productMasterDTOModel)
         {
-            var insertProductMaster = "INSERT INTO tb_product_master(product_master_id,product_code,brand_id,sleeve,product_type) " +
-                "VALUES(@productMasterUUID,@product_code,@brand_id,@sleeve,@product_type); " +
+            var insertProductMaster = "INSERT INTO tb_product_master(product_master_id,product_code,brand_id,sleeve,product_type,material) " +
+                "VALUES(@productMasterUUID,@product_code,@brand_id,@sleeve,@product_type,@material); " +
                 " SELECT @productMasterUUID AS LastInsertedId;";
 
             var insertProductDetails = "INSERT INTO tb_product_details(product_details_id,product_master_id,available_quantity,rate,discount,description) " +
@@ -81,6 +81,7 @@ namespace order.Repository.AdminRepository
                 productMasterParameters.Add("brand_id", brandId);
                 productMasterParameters.Add("sleeve", productMasterDTOModel.sleeve);
                 productMasterParameters.Add("product_type", productMasterDTOModel.product_type);
+                productMasterParameters.Add("material", productMasterDTOModel.material);
                 var product_master_id = await connection.ExecuteScalarAsync<string>(insertProductMaster, productMasterParameters);
                 if (!string.IsNullOrEmpty(product_master_id))
                 {
@@ -157,7 +158,7 @@ namespace order.Repository.AdminRepository
         {
             try
             {
-                var product_master_update_query = "update tb_product_master SET brand_id=@brand_id," +
+                var product_master_update_query = "update tb_product_master SET brand_id=@brand_id,material=@material," +
                     "sleeve=@sleeve,product_type=@product_type," +
                     "updated_date=NOW() where product_master_id=@product_master_id;" +
                     "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
@@ -303,7 +304,7 @@ namespace order.Repository.AdminRepository
         {
             try
             {
-                var company_master_query = "select product_code,product_master_id,brand_id,sleeve," +
+                var company_master_query = "select product_code,product_master_id,brand_id,sleeve,material," +
                     "product_type,is_active from tb_product_master where is_delete = 0;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
