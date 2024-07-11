@@ -69,7 +69,27 @@ namespace order.Repository.AdminRepository
             catch (Exception ex)
             {
 
-                throw new Exception("Error occurred while deleting user.", ex);
+                throw new Exception("Error occurred while deleting Brand.", ex);
+            }
+        }
+
+        public async Task<IEnumerable<GetBrand>> GetBrand()
+        {
+            try
+            {
+                var query = "select brand_id,brand_name,is_active from tb_brand where is_delete=0;";
+                using (var connection = _dapperContext.CreateConnection())
+                {
+                    var parameters = new DynamicParameters();
+                   
+                    var brand = await connection.QueryAsync<GetBrand>(query);
+                    
+                    return brand.ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error occur while retrieve brand");
             }
         }
 
@@ -103,7 +123,7 @@ namespace order.Repository.AdminRepository
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occur while user registration");
+                throw new Exception("Error occur while Brand insert");
             }
         }
 
@@ -126,7 +146,7 @@ namespace order.Repository.AdminRepository
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occur while Email checking");
+                throw new Exception("Error occur while brand name checking");
             }
         }
 

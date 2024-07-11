@@ -194,7 +194,7 @@ namespace order.Controllers.AdminController
                 var product_master_list = await _productRepo.GetProductMaster();
                 if (product_master_list == null)
                 {
-                    return NotFound(new { data = string.Empty, message = "No user found" });
+                    return NotFound(new { data = string.Empty, message = "No product found" });
                 }
 
                 return Ok(product_master_list);

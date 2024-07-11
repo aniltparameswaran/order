@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using order.DTOModel;
 using order.IRepository.IAdminRepositorys;
 using order.Repository;
+using order.Repository.AdminRepository;
 using order.Utils;
 
 namespace order.Controllers.AdminController
@@ -123,6 +124,36 @@ namespace order.Controllers.AdminController
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
+            }
+        }
+        [HttpGet]
+        [Route("get-brand-list")]
+        public async Task<IActionResult> GetProductMaster()
+        {
+            try
+            {
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
+                }
+                if (userId != adminId)
+                {
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
+
+                var brand_list = await _brandRepo.GetBrand();
+                if (brand_list == null)
+                {
+                    return NotFound(new { data = string.Empty, message = "No brand found" });
+                }
+
+                return Ok(brand_list);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
             }
         }
     }

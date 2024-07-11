@@ -149,7 +149,7 @@ namespace order.Repository
                 throw new Exception("Error occur while retrieve user details");
             }
         }
-        public async Task<UserdetailsModel> GetAllUserDetails()
+        public async Task<IEnumerable<UserdetailsModel>> GetAllUserDetails()
         {
             try
             {
@@ -157,8 +157,8 @@ namespace order.Repository
                     "address,pin,adhaar_no,is_active  from tb_user where is_delete = 0 and user_id!='569806b1-3379-11ef-afb3-00224dae2257';";
                 using (var connection = _dapperContext.CreateConnection())
                 {
-                    var user_details = await connection.QuerySingleOrDefaultAsync<UserdetailsModel>(user_details_query);
-                    return user_details;
+                    var user_details = await connection.QueryAsync<UserdetailsModel>(user_details_query);
+                    return user_details.ToList();
                 }
             }
             catch (Exception ex)

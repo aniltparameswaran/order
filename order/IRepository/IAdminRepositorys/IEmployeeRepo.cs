@@ -10,7 +10,7 @@ namespace order.IRepository.IAdminRepositorys
         public Task<string> UserRegistration(EmployeeRegistrationDTOModel model);
         public Task<(bool, string)> DeleteUser(string user_id, int action);
         public Task<UserdetailsByIdModel> GetUserDetailsByUserId(string user_id);
-        public Task<UserdetailsModel> GetAllUserDetails();
+        public Task<IEnumerable<UserdetailsModel>> GetAllUserDetails();
         public Task<int> UpdateEmployee(EmployeeUpdateDTOModel model, string user_id);
 
     }

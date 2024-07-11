@@ -54,7 +54,7 @@ namespace order.Controllers.AdminController
                 var request_status = await _employeRepo.UserRegistration(model);
                 if (request_status != null)
                 {
-                    return Ok(new { data = string.Empty, message = StatusUtils.SUCCESS });
+                    return Ok(new { data = request_status, message = StatusUtils.SUCCESS });
                 }
                 return BadRequest(new { data = string.Empty, message = StatusUtils.NOT_REGISTERED });
             }
@@ -169,7 +169,7 @@ namespace order.Controllers.AdminController
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId == adminId)
+                if (userId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = "Unauthorized" });
                 }

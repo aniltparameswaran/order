@@ -48,8 +48,8 @@ namespace order.Repository.AdminRepository
                 "VALUES(@productMasterUUID,@product_code,@brand_id,@sleeve,@product_type,@material); " +
                 " SELECT @productMasterUUID AS LastInsertedId;";
 
-            var insertProductDetails = "INSERT INTO tb_product_details(product_details_id,product_master_id,available_quantity,rate,discount,description) " +
-                "VALUES(@productDetailsUUID,@product_master_id,@available_quantity,@rate,@discount,@description); " +
+            var insertProductDetails = "INSERT INTO tb_product_details(product_details_id,product_master_id,available_quantity,rate,discount,size_range) " +
+                "VALUES(@productDetailsUUID,@product_master_id,@available_quantity,@rate,@discount,@size_range); " +
                 "SELECT @productDetailsUUID;";
             var last_inserted_Code = "SELECT product_code FROM tb_product_master ORDER BY inserted_date DESC LIMIT 1;";
             var deleteProductMasterById = "delete from tb_product_master where product_master_id=@product_master_id";
@@ -97,7 +97,7 @@ namespace order.Repository.AdminRepository
                             productDetailsParameters.Add("available_quantity", productDeatils.available_quantity);
                             productDetailsParameters.Add("rate", productDeatils.rate);
                             productDetailsParameters.Add("discount", productDeatils.discount);
-                            productDetailsParameters.Add("description", productDeatils.description);
+                            productDetailsParameters.Add("size_range", productDeatils.size_range);
                             var product_detail_id = await connection.ExecuteScalarAsync<string>(insertProductDetails, productDetailsParameters);
                             if (!string.IsNullOrEmpty(product_master_id))
                             {
@@ -129,7 +129,7 @@ namespace order.Repository.AdminRepository
             try
             {
                 var product_detail_update_query = "update tb_product_details SET available_quantity=@available_quantity," +
-                    "rate=@rate,discount=@discount,description=@description," +
+                    "rate=@rate,discount=@discount,size_range=@size_range," +
                     "updated_date=NOW() where product_details_id=@product_details_id;" +
                     "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
                 using (var connection = _dapperContext.CreateConnection())
@@ -138,7 +138,7 @@ namespace order.Repository.AdminRepository
                     parameters.Add("available_quantity", productDetailsUpdateDTOModel.available_quantity);
                     parameters.Add("rate", productDetailsUpdateDTOModel.rate);
                     parameters.Add("discount", productDetailsUpdateDTOModel.discount);
-                    parameters.Add("description", productDetailsUpdateDTOModel.description);
+                    parameters.Add("size_range", productDetailsUpdateDTOModel.size_range);
                     parameters.Add("product_details_id", product_details_id);
 
                     var update_product = await connection.ExecuteScalarAsync<int>
@@ -150,7 +150,7 @@ namespace order.Repository.AdminRepository
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occur while update user");
+                throw new Exception("Error occur while update product details");
             }
         }
 
@@ -179,7 +179,7 @@ namespace order.Repository.AdminRepository
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occur while update user");
+                throw new Exception("Error occur while update product details");
             }
         }
         public async Task<(bool, string)> DeleteProductDetail(string product_details_id, long action)
@@ -237,7 +237,7 @@ namespace order.Repository.AdminRepository
             catch (Exception ex)
             {
 
-                throw new Exception("Error occurred while deleting user.", ex);
+                throw new Exception("Error occurred while deleting product details.", ex);
             }
         }
 
@@ -284,19 +284,16 @@ namespace order.Repository.AdminRepository
                             else if (action == 2)
                             {
                                 return (true, StatusUtils.IS_DELETE_UPDATEDTION_SUCCESS);
-
                             }
-
                         }
                     }
                 }
-                return (false, StatusUtils.UPDATION_FAILED); ;
-
+                return (false, StatusUtils.UPDATION_FAILED); 
             }
             catch (Exception ex)
             {
 
-                throw new Exception("Error occurred while deleting user.", ex);
+                throw new Exception("Error occurred while deleting product details.", ex);
             }
         }
 
@@ -304,8 +301,10 @@ namespace order.Repository.AdminRepository
         {
             try
             {
-                var company_master_query = "select product_code,product_master_id,brand_id,sleeve,material," +
-                    "product_type,is_active from tb_product_master where is_delete = 0;";
+                var company_master_query = "select tb_product_master.product_code,tb_product_master.product_master_id,tb_product_master.brand_id,tb_product_master.sleeve," +
+                    "tb_product_master.material,tb_product_master.product_type,tb_product_master.is_active,tb_brand.brand_name from tb_product_master " +
+                    "inner join tb_brand on tb_brand.brand_id=tb_product_master.brand_id " +
+                    "where tb_product_master.is_delete = 0;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
                     var company_master_list = await connection.QueryAsync<GetProductMasterModel>(company_master_query);
@@ -314,21 +313,38 @@ namespace order.Repository.AdminRepository
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occur while retrieve user details");
+                throw new Exception("Error occur while retrieve product details");
             }
         }
 
         public async Task<GetProductDetailsByMasterId> GetProductDetailByMasterId(string product_master_id)
         {
-            var query = "SELECT * FROM tb_product_master WHERE product_master_id = @product_master_id and is_delete=0;" +
-                "SELECT * FROM tb_product_details WHERE product_master_id = @product_master_id and is_delete=0";
-            using (var connection = _dapperContext.CreateConnection())
-            using (var multi = await connection.QueryMultipleAsync(query, new { product_master_id }))
+            try
             {
-                var company = await multi.ReadSingleOrDefaultAsync<GetProductDetailsByMasterId>();
-                if (company != null)
-                    company.ProductDetailsListl = (await multi.ReadAsync<GetProductDetailsModel>()).ToList();
-                return company;
+                var query = @"
+                            SELECT tb_product_master.product_code, tb_product_master.product_master_id, tb_product_master.brand_id, 
+                                   tb_product_master.sleeve, tb_product_master.material, tb_product_master.product_type, 
+                                   tb_product_master.is_active, tb_brand.brand_name 
+                            FROM tb_product_master 
+                            INNER JOIN tb_brand ON tb_brand.brand_id = tb_product_master.brand_id 
+                            WHERE tb_product_master.product_master_id = @product_master_id AND tb_product_master.is_delete = 0;
+    
+                            SELECT * FROM tb_product_details 
+                            WHERE product_master_id = @product_master_id AND is_delete = 0";
+
+                using (var connection = _dapperContext.CreateConnection())
+                using (var multi = await connection.QueryMultipleAsync(query, new { product_master_id }))
+                {
+                    var company = await multi.ReadSingleOrDefaultAsync<GetProductDetailsByMasterId>();
+                    if (company != null)
+                        company.ProductDetailsList = (await multi.ReadAsync<GetProductDetailsModel>()).ToList();
+                    return company;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error occur while retrieve product details");
             }
         }
 
