@@ -14,14 +14,17 @@ using order.Repository.AdminRepository;
 using order.Repository.UserRepository;
 using order.Repository;
 using order.IRepository.IUserRepository;
+using Microsoft.AspNetCore.Authentication.Cookies;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddLogging();
 builder.Services.AddSingleton<DapperContext>();
 builder.Services.AddScoped<IEmployeeRepo, EmployeeRepo>();
 builder.Services.AddScoped<IUserRepo, UserRepo>();
@@ -32,9 +35,12 @@ builder.Services.AddScoped<IShopRepo, ShopRepo>();
 builder.Services.AddScoped<IOrderRepo, OrderRepo>();
 builder.Services.AddScoped<IItemRepo, ItemRepo>();
 builder.Services.AddScoped<ICheckRepo, CheckRepo>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<ICookieService, CookieService>();
+
 builder.Services.AddSingleton<SecurityUtils>();
 
-
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 builder.Services.AddCors(options => {
     options.AddPolicy("CORSPolicy", builder => builder.AllowAnyMethod().AllowAnyHeader().AllowCredentials().SetIsOriginAllowed((hosts) => true));
@@ -44,7 +50,8 @@ builder.Services.AddCors(options => {
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddHttpContextAccessor();
+
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
@@ -61,8 +68,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 
 
-
-builder.Services.AddEndpointsApiExplorer();
 
 
 
@@ -102,6 +107,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseCors("CORSPolicy");
+app.UseMiddleware<CustomTokenMiddleware>();
 app.UseRouting();
 
 app.UseAuthentication();
