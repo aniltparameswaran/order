@@ -28,7 +28,8 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
@@ -45,7 +46,8 @@ namespace order.Controllers.AdminController
                 var last_inserted_id = await _brandRepo.InsertBrand(brand_name);
                 if (last_inserted_id != "")
                 {
-                    return Ok(new { data = last_inserted_id, message = StatusUtils.SUCCESS });
+                    var encryptInserId = SecurityUtils.EncryptString(last_inserted_id);
+                    return Ok(new { data = encryptInserId, message = StatusUtils.SUCCESS });
                 }
                 return BadRequest(new { data = string.Empty, message = StatusUtils.NOT_REGISTERED });
             }
@@ -63,15 +65,18 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
-                var (delete_status, message) = await _brandRepo.DeleteBrand(brand_id, action);
+
+                var decryptBrandId = SecurityUtils.EncryptString(brand_id);
+                var (delete_status, message) = await _brandRepo.DeleteBrand(decryptBrandId, action);
                 if (delete_status)
                 {
                     return Ok(new { data = string.Empty, message });
@@ -93,11 +98,13 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                var decryptBrandId = SecurityUtils.EncryptString(brand_id);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
@@ -105,14 +112,14 @@ namespace order.Controllers.AdminController
                 var (brand_exist_user_id, brand_message) = await _brandRepo.IsBrandExist(brand_name);
                 if (brand_exist_user_id != null)
                 {
-                    if (brand_exist_user_id != brand_id)
+                    if (brand_exist_user_id != decryptBrandId)
                     {
                         return BadRequest(new { data = string.Empty, message = brand_message });
                     }
                 }
 
-
-                var update_status = await _brandRepo.UpdateBrandName(brand_name, brand_id);
+               
+                var update_status = await _brandRepo.UpdateBrandName(brand_name, decryptBrandId);
                 if (update_status > 0)
                 {
                     return Ok(new { data = string.Empty, message = "Successfully  update brand" });
@@ -134,11 +141,12 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }

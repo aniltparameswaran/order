@@ -24,7 +24,8 @@ namespace order.Controllers.UserController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
@@ -43,17 +44,19 @@ namespace order.Controllers.UserController
         }
         [HttpGet]
         [Route("check-quantity-vailable")]
-        public async Task<IActionResult> CheckQuantityAvailable(OrderDetailsDTOModel item)
+        public async Task<IActionResult> CheckQuantityAvailable(string product_details_id,int quatity)
         {
             try
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                var (status,massage) = await _itemRepo.CheckQuantity(item);
+                product_details_id = SecurityUtils.DecryptString(product_details_id);
+                var (status,massage) = await _itemRepo.CheckQuantity(product_details_id, quatity);
                 return NotFound(new { data = string.Empty, message = massage });
                 
 

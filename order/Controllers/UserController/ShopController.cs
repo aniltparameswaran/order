@@ -26,18 +26,21 @@ namespace order.Controllers.UserController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                var (shop_id,message) = await _shopRepo.CheckShopIsExsit(shopDTOModel.lisense_number, shopDTOModel.latitude, shopDTOModel.logitude);
-                if (shop_id!=null)
+                var (shopId,message) = await _shopRepo.CheckShopIsExsit(shopDTOModel.lisense_number, shopDTOModel.latitude, shopDTOModel.logitude);
+                if (shopId != null)
                 {
-                    return BadRequest(new { data = string.Empty, message = message });
+                    var decryptshopId = SecurityUtils.EncryptString(shopId);
+                    return BadRequest(new { data = shopId, message = message });
                 }
-                var shp_id = await _shopRepo.InsertShop(shopDTOModel, userId);
+                var shp_id = await _shopRepo.InsertShop(shopDTOModel, decryptUserId);
                 if (shp_id != null)
                 {
+
                     return Ok(new { data = shp_id, message = StatusUtils.SUCCESS });
                 }
                 return BadRequest(new { data = string.Empty, message = StatusUtils.FAILED });
@@ -82,11 +85,12 @@ namespace order.Controllers.UserController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                var shpopList = await _shopRepo.GetShop(userId);
+                var shpopList = await _shopRepo.GetShop(decryptUserId);
                 if (shpopList != null)
                 {
                     return Ok(new { data = shpopList, message = StatusUtils.SUCCESS });
@@ -107,11 +111,14 @@ namespace order.Controllers.UserController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                var shop = await _shopRepo.GetShopDetailByShopId(shop_id,userId);
+
+                shop_id = SecurityUtils.DecryptString(shop_id);
+                var shop = await _shopRepo.GetShopDetailByShopId(shop_id, decryptUserId);
                 if (shop != null)
                 {
                     return Ok(new { data = shop, message = StatusUtils.SUCCESS });

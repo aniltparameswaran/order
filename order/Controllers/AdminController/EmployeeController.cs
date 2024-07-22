@@ -33,11 +33,12 @@ namespace order.Controllers.AdminController
 
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
@@ -51,10 +52,11 @@ namespace order.Controllers.AdminController
                 {
                     return BadRequest(new { data = string.Empty, message = email_message });
                 }
-                var request_status = await _employeRepo.UserRegistration(model);
-                if (request_status != null)
+                var last_inserted_id = await _employeRepo.UserRegistration(model);
+                if (last_inserted_id != null)
                 {
-                    return Ok(new { data = request_status, message = StatusUtils.SUCCESS });
+                    var encryptInserId = SecurityUtils.EncryptString(last_inserted_id);
+                    return Ok(new { data = encryptInserId, message = StatusUtils.SUCCESS });
                 }
                 return BadRequest(new { data = string.Empty, message = StatusUtils.NOT_REGISTERED });
             }
@@ -72,15 +74,17 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
-                var (delete_status, message) = await _employeRepo.DeleteUser(user_id, action);
+                var decrypUpdatetUserId = SecurityUtils.EncryptString(user_id);
+                var (delete_status, message) = await _employeRepo.DeleteUser(decrypUpdatetUserId, action);
                 if (delete_status)
                 {
                     return Ok(new { data = string.Empty, message });
@@ -102,11 +106,12 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
@@ -133,15 +138,17 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
-                var user_details = await _employeRepo.GetUserDetailsByUserId(user_id);
+                var decrypUpdatetUserId = SecurityUtils.DecryptString(user_id);
+                var user_details = await _employeRepo.GetUserDetailsByUserId(decrypUpdatetUserId);
                 if (user_details == null)
                 {
                     return NotFound(new { data = string.Empty, message = "User not found" });
@@ -165,15 +172,17 @@ namespace order.Controllers.AdminController
 
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = "Unauthorized" });
                 }
-                var update_status = await _employeRepo.UpdateEmployee(model, user_id);
+                var decrypUpdatetUserId = SecurityUtils.EncryptString(user_id);
+                var update_status = await _employeRepo.UpdateEmployee(model, decrypUpdatetUserId);
                 if (update_status > 0)
                 {
                     return Ok(new { data = string.Empty, message = "Successfully  update user" });

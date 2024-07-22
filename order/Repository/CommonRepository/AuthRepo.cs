@@ -16,11 +16,13 @@ namespace order.Repository.CommonRepository
     {
         private readonly DapperContext _dapperContext;
         private readonly IConfiguration _configuration;
+        private readonly ITokenService _tokenService;
         private readonly string adminId= "569806b1-3379-11ef-afb3-00224dae2257";
-        public AuthRepo(DapperContext dapperContext, IConfiguration configuration)
+        public AuthRepo(DapperContext dapperContext, IConfiguration configuration, ITokenService tokenService)
         {
             _dapperContext = dapperContext;
             _configuration = configuration;
+            _tokenService = tokenService;
         }
         public bool IsEmail(string input)
         {
@@ -83,10 +85,10 @@ namespace order.Repository.CommonRepository
             throw new NotImplementedException();
         }
 
-        public async Task<(bool, string)> Login(LoginDTOModel loginDTOModel, int adminOrNot)
+        public async Task<(bool, string,string)> Login(LoginDTOModel loginDTOModel, int adminOrNot)
         {
             var getQuery = "select password,email,user_id from tb_user where is_delete=0";
-
+          
             using (var connection = _dapperContext.CreateConnection())
             {
                 if (connection == null)
@@ -112,21 +114,23 @@ namespace order.Repository.CommonRepository
                     var decryPassword = SecurityUtils.DecryptString(encryptPasswordtoDecrpt.ToString());
                     if (loginDTOModel.password + userDetails.email == decryPassword)
                     {
+                        var encryptUserId = SecurityUtils.EncryptString(userDetails.user_id);
                         var tokenUtilities = new TokenUtil(_configuration);
                         if (adminOrNot == 1)
                         {
                             if (userDetails.user_id == adminId )
                             {
-                                var token = tokenUtilities.GetToken(userDetails.user_id);
+                                
+                                var tokensDto = _tokenService.GenerateTokens(encryptUserId);
 
-                                if (token != null)
+                                if (tokensDto != null)
                                 {
-                                    return (true, token);
+                                    return (true, tokensDto, StatusUtils.SUCCESS);
 
                                 }
-                                return (false, StatusUtils.FAILED);
+                                return (false, tokensDto, StatusUtils.FAILED);
                             }
-                            return (false, StatusUtils.UNAUTHORIZED_ACCESS);
+                            return (false, null, StatusUtils.UNAUTHORIZED_ACCESS);
 
                         }
                         else if (adminOrNot == 0)
@@ -134,31 +138,31 @@ namespace order.Repository.CommonRepository
 
                             if (userDetails.user_id != "569806b1-3379-11ef-afb3-00224dae2257")
                             {
-                                var token = tokenUtilities.GetToken(userDetails.user_id);
+                                var tokensDto = _tokenService.GenerateTokens(encryptUserId);
 
-                                if (token != null)
+                                if (tokensDto != null)
                                 {
-                                    return (true, token);
+                                    return (true, tokensDto, StatusUtils.SUCCESS);
 
                                 }
-                                return (false, StatusUtils.FAILED);
+                                return (false, tokensDto, StatusUtils.FAILED);
                             }
-                            return (false, StatusUtils.UNAUTHORIZED_ACCESS);
+                            return (false, null, StatusUtils.UNAUTHORIZED_ACCESS);
 
 
                         }
-                        return (false, StatusUtils.UNAUTHORIZED_ACCESS);
+                        return (false, null, StatusUtils.UNAUTHORIZED_ACCESS);
 
                     }
-                    return (false, StatusUtils.INVALID_PASSWORD);
+                    return (false, null, StatusUtils.INVALID_PASSWORD);
 
                 }
                 else
                 {
-                    return (false, StatusUtils.INVALID_PHONE_OR_EMAIL);
+                    return (false, null, StatusUtils.INVALID_PHONE_OR_EMAIL);
                 }
 
-                return (false, StatusUtils.FAILED);
+                return (false, null, StatusUtils.FAILED);
             }
         }
 

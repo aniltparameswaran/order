@@ -4,6 +4,7 @@ using order.DTOModel;
 using order.IRepository.IAdminRepositorys;
 using order.Models;
 using order.Utils;
+using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace order.Repository.AdminRepository
@@ -307,8 +308,20 @@ namespace order.Repository.AdminRepository
                     "where tb_product_master.is_delete = 0;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
-                    var company_master_list = await connection.QueryAsync<GetProductMasterModel>(company_master_query);
-                    return company_master_list;
+                    var companyMasterList = await connection.QueryAsync<GetProductMasterModel>(company_master_query);
+
+                    var companyMasterDetails = companyMasterList.Select(companyMaster => new GetProductMasterModel
+                    {
+                        product_master_id = companyMaster.product_master_id != null ? SecurityUtils.EncryptString(companyMaster.product_master_id) : null,
+                        brand_id = companyMaster.brand_id != null ? SecurityUtils.EncryptString(companyMaster.brand_id) : null,
+                        product_code = companyMaster.product_code,
+                        sleeve = companyMaster.sleeve,
+                        material = companyMaster.material,
+                        product_type = companyMaster.product_type,
+                        brand_name = companyMaster.brand_name,
+                        is_active = companyMaster.is_active,
+                    }).ToList();
+                    return companyMasterDetails;
                 }
             }
             catch (Exception ex)
@@ -338,6 +351,26 @@ namespace order.Repository.AdminRepository
                     var company = await multi.ReadSingleOrDefaultAsync<GetProductDetailsByMasterId>();
                     if (company != null)
                         company.ProductDetailsList = (await multi.ReadAsync<GetProductDetailsModel>()).ToList();
+
+                    company.product_master_id = company.product_master_id != null ? SecurityUtils.EncryptString(company.product_master_id) : null;
+                    company.brand_id = company.brand_id != null ? SecurityUtils.EncryptString(company.brand_id) : null;
+
+
+                    List<GetProductDetailsModel> ProductDetailsList= company.ProductDetailsList;
+
+
+                    var ProductDetails = ProductDetailsList.Select(productDetail => new GetProductDetailsModel
+                    {
+                        product_details_id = productDetail.product_details_id != null ? SecurityUtils.EncryptString(productDetail.product_details_id) : null,
+                        available_quantity = productDetail.available_quantity,
+                        rate = productDetail.rate,
+                        discount = productDetail.discount,
+                        size_range = productDetail.size_range,
+                        is_active = productDetail.is_active,
+                    }).ToList();
+
+                    company.ProductDetailsList= ProductDetails;
+
                     return company;
                 }
 

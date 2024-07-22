@@ -18,14 +18,14 @@ namespace order.Repository.UserRepository
             _dapperContext = dapperContext;
         }
 
-        public async Task<(bool, string)> CheckQuantity(OrderDetailsDTOModel item)
+        public async Task<(bool, string)> CheckQuantity(string product_details_id, int quatity)
         {
             var getQuery = "select count(*) from tb_product_details  where is_delete=0 and is_active=1 and" +
                 " available_quantity>@quantity and product_details_id=@product_details_id;";
             using (var connection = _dapperContext.CreateConnection())
             {
                 
-                    var count = await connection.QuerySingleOrDefaultAsync<int>(getQuery, new { quantity = item.quatity, product_details_id= item.product_details_id });
+                    var count = await connection.QuerySingleOrDefaultAsync<int>(getQuery, new { quantity = quatity, product_details_id= product_details_id });
                     if (count > 0)
                     {
                         return (true, StatusUtils.QUANTITY_AVAILABLE);
@@ -50,7 +50,17 @@ namespace order.Repository.UserRepository
             using (var connection = _dapperContext.CreateConnection())
             {
                 var itemList= await connection.QueryAsync<GetProductDetailsModel>(getQuery, new { product_code = item_code });
-                return itemList.ToList();
+                var itemDetails = itemList.Select(item => new GetProductDetailsModel
+                {
+                    product_details_id = item.product_details_id != null ? SecurityUtils.EncryptString(item.product_details_id) : null,
+                    available_quantity = item.available_quantity,
+                    discount = item.discount,
+                    rate = item.rate,
+                    size_range = item.size_range,
+                    is_active = item.is_active,
+                }).ToList();
+
+                return itemDetails;
             }
         }
     }

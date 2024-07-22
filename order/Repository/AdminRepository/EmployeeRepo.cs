@@ -5,6 +5,7 @@ using order.IRepository.IAdminRepositorys;
 using order.Models;
 using order.Utils;
 using System.Data;
+using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 
 namespace order.Repository
 {
@@ -141,6 +142,7 @@ namespace order.Repository
                     {
                         user_id = user_id
                     });
+
                     return user_details;
                 }
             }
@@ -157,8 +159,20 @@ namespace order.Repository
                     "address,pin,adhaar_no,is_active  from tb_user where is_delete = 0 and user_id!='569806b1-3379-11ef-afb3-00224dae2257';";
                 using (var connection = _dapperContext.CreateConnection())
                 {
-                    var user_details = await connection.QueryAsync<UserdetailsModel>(user_details_query);
-                    return user_details.ToList();
+                    var userDetails = await connection.QueryAsync<UserdetailsModel>(user_details_query);
+
+                    var usersDetails = userDetails.Select(userDetail => new UserdetailsModel
+                    {
+                        user_id = userDetail.user_id != null ? SecurityUtils.EncryptString(userDetail.user_id) : null,
+                        user_name = userDetail.user_name,
+                        email = userDetail.email,
+                        phone = userDetail.phone,
+                        address = userDetail.address,
+                        pin = userDetail.pin,
+                        adhaar_no = userDetail.adhaar_no,
+                        is_active = userDetail.is_active,
+                    }).ToList();
+                    return usersDetails;
                 }
             }
             catch (Exception ex)

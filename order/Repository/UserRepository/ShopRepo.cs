@@ -6,6 +6,8 @@ using order.Utils;
 using static Google.Protobuf.Reflection.SourceCodeInfo.Types;
 using System;
 using order.IRepository.IUserRepoRepository;
+using static Org.BouncyCastle.Asn1.Cmp.Challenge;
+using Twilio.TwiML.Voice;
 
 namespace order.Repository.UserRepository
 {
@@ -43,7 +45,14 @@ namespace order.Repository.UserRepository
                 var shopList= await connection.QueryAsync<ShopNaameModel>(getShop,new { userId = userId });
                 if (shopList != null)
                 {
-                    return shopList.ToList();
+
+                    var shopDetails = shopList.Select(shop => new ShopNaameModel
+                    {
+                        shop_id = shop.shop_id != null ? SecurityUtils.EncryptString(shop.shop_id) : null,
+                        shop_name = shop.shop_name,
+                        address = shop.address
+                    }).ToList();
+                    return shopDetails;
                 }
                 return null;
             }
@@ -63,6 +72,7 @@ namespace order.Repository.UserRepository
                 var shopDeatils = shopList.FirstOrDefault();
                 if (shopDeatils != null)
                 {
+                    shopDeatils.shop_id = shopDeatils.shop_id != null ? SecurityUtils.EncryptString(shopDeatils.shop_id) : null;
                     return shopDeatils;
                 }
                 return null;

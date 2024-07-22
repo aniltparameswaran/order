@@ -15,6 +15,7 @@ namespace order.Controllers.AdminController
     {
         private readonly IProductRepo _productRepo;
         private readonly string adminId="569806b1-3379-11ef-afb3-00224dae2257";
+
         public ProductController(IProductRepo productRepo)
         {
             _productRepo = productRepo;
@@ -28,21 +29,24 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
 
                 if (productMasterDTOModel.ProductDetailsListl.Count > 0)
                 {
+                    productMasterDTOModel.brand_id=SecurityUtils.DecryptString(productMasterDTOModel.brand_id);
                     var (status, data) = await _productRepo.InsertProduct(productMasterDTOModel);
                     if (status)
                     {
-                        return Ok(new { data, message = StatusUtils.SUCCESS });
+                        var insertedId = SecurityUtils.EncryptString(data);
+                        return Ok(new { data=insertedId, message = StatusUtils.SUCCESS });
                     }
 
                     return BadRequest(new { data = string.Empty, message = data });
@@ -65,14 +69,18 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
+                product_master_id=SecurityUtils.DecryptString(product_master_id);
+                model.brand_id = SecurityUtils.DecryptString(model.brand_id);
+
                 var update_status = await _productRepo.UpdateProductMaster(model, product_master_id);
                 if (update_status > 0)
                 {
@@ -94,14 +102,17 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
+
+                product_details_id = SecurityUtils.DecryptString(product_details_id);
                 var update_status = await _productRepo.UpdateProductDetail(model, product_details_id);
                 if (update_status > 0)
                 {
@@ -123,14 +134,17 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
+                product_master_id = SecurityUtils.DecryptString(product_master_id);
+
                 var (delete_status, message) = await _productRepo.DeleteProductMaster(product_master_id, action);
                 if (delete_status)
                 {
@@ -152,14 +166,17 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
+
+                product_details_id = SecurityUtils.DecryptString(product_details_id);
                 var (delete_status, message) = await _productRepo.DeleteProductDetail(product_details_id, action);
                 if (delete_status)
                 {
@@ -182,11 +199,12 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
@@ -213,15 +231,16 @@ namespace order.Controllers.AdminController
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
-                if (userIdClaimed == null || string.IsNullOrEmpty(userId))
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }
-
+                product_master_id = SecurityUtils.DecryptString(product_master_id);
                 var product_master_deatils = await _productRepo.GetProductDetailByMasterId(product_master_id);
                 if (product_master_deatils == null)
                 {

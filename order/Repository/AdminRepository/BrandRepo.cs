@@ -80,11 +80,17 @@ namespace order.Repository.AdminRepository
                 var query = "select brand_id,brand_name,is_active from tb_brand where is_delete=0;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
-                    var parameters = new DynamicParameters();
-                   
-                    var brand = await connection.QueryAsync<GetBrand>(query);
                     
-                    return brand.ToList();
+                   
+                    var brands = await connection.QueryAsync<GetBrand>(query);
+
+                    var brandDetails = brands.Select(brand => new GetBrand
+                    {
+                        brand_id = brand.brand_id != null ? SecurityUtils.EncryptString(brand.brand_id) : null,
+                        brand_name = brand.brand_name,
+                        is_active = brand.is_active,
+                    }).ToList();
+                    return brandDetails.ToList();
                 }
             }
             catch (Exception ex)
