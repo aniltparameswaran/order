@@ -43,7 +43,7 @@ namespace order.Controllers.UserController
             }
         }
         [HttpPost]
-        [Route("check-quantity-available")]pdate
+        [Route("check-quantity-available")]
         public async Task<IActionResult> CheckQuantityAvailable(string product_details_id,int quatity)
         {
             try
