@@ -36,6 +36,17 @@ namespace order.Repository.UserRepository
 
         }
 
+        public async Task<decimal> GetCurrentBalanceByShopId(string shop_id)
+        {
+            var getBalanceByShopId = "select creadit_amount from tb_shop_credit where is_active=0 and shop_id=@shop_id";
+            using (var connection = _dapperContext.CreateConnection())
+            {
+                return await connection.QueryFirstOrDefaultAsync<decimal>(getBalanceByShopId, new { shop_id = shop_id });
+            }
+
+
+        }
+
         public async Task<IEnumerable<ShopNaameModel>> GetShop(string userId)
         {
             var getShop = "select shop_id,shop_name,address from tb_shop where is_delete=0 and ((inserted_by=@userId and updated_by is null) or updated_by=@userId)";
@@ -82,6 +93,24 @@ namespace order.Repository.UserRepository
             throw new NotImplementedException();
         }
 
+        public async Task<string> InsertCredit(string shop_id, string inserted_by)
+        {
+            var insertCredit = "INSERT INTO tb_shop_credit(shop_credit_id,shop_id,inserted_by)VALUES (@creditUUID,@shop_id,@inserted_by);" +
+               "SELECT @creditUUID;";
+
+            using (var connection = _dapperContext.CreateConnection())
+            {
+                var creditUUID = Guid.NewGuid().ToString();
+                var creditParameters = new DynamicParameters();
+                creditParameters.Add("creditUUID", creditUUID);
+                creditParameters.Add("shop_id", shop_id);
+                creditParameters.Add("inserted_by", inserted_by);
+                return await connection.ExecuteScalarAsync<string>(insertCredit, creditParameters);
+
+                
+            }
+        }
+
         public async Task<string> InsertShop(ShopDTOModel shopDTOModel, string inserted_by)
         {
             var insertShop = "INSERT INTO tb_shop" +
@@ -89,8 +118,7 @@ namespace order.Repository.UserRepository
                  "VALUES (@shopUUID,@shop_name,@address,@pin,@lantmark,@latitude,@logitude, @phone, @email, @lisense_number,@inserted_by);" +
                  "SELECT @shopUUID;";
 
-            var insertCredit= "INSERT INTO tb_shop_credit(shop_credit_id,shop_id,inserted_by)VALUES (@creditUUID,@shop_id,@inserted_by);" +
-                "SELECT @creditUUID;";
+           
 
             var deleteShop = "delete from tb_shop where shop_id=@last_inserted_id;";
             using (var connection = _dapperContext.CreateConnection())
@@ -114,12 +142,9 @@ namespace order.Repository.UserRepository
                 var emailService = new CommunicationUtils();
                 if (!string.IsNullOrEmpty(last_inserted_id))
                 {
-                    var creditUUID = Guid.NewGuid().ToString();
-                    var creditParameters = new DynamicParameters();
-                    creditParameters.Add("creditUUID", creditUUID);
-                    creditParameters.Add("shop_id", last_inserted_id);
-                    creditParameters.Add("inserted_by", inserted_by);
-                    var credit_id = await connection.ExecuteScalarAsync<string>(insertCredit, creditParameters);
+
+                    var credit_id = await InsertCredit(last_inserted_id, inserted_by);
+
                     if (!string.IsNullOrEmpty(credit_id))
                     {
                         EmailModel mail = new EmailModel();

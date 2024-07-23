@@ -11,5 +11,7 @@ namespace order.IRepository.IUserRepoRepository
 
         public Task<IEnumerable<ShopNaameModel>> GetShop(string userId);
         public Task<ShopModel> GetShopDetailByShopId(string shop_id,string userId);
+        public Task<decimal> GetCurrentBalanceByShopId(string shop_id);
+        public Task<string> InsertCredit(string shop_id, string inserted_by);
     }
 }

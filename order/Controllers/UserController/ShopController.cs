@@ -130,5 +130,33 @@ namespace order.Controllers.UserController
                 return StatusCode(500, ex.Message);
             }
         }
+
+
+        [HttpGet]
+        [Route("get-cuurent-balance-by-shop-id")]
+        public async Task<IActionResult> GetCurrentBalanceByShopId(string shop_id)
+        {
+            try
+            {
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
+                }
+
+                shop_id = SecurityUtils.DecryptString(shop_id);
+                var balance = await _shopRepo.GetCurrentBalanceByShopId(shop_id);
+
+                return Ok(new { data = balance, message = StatusUtils.SUCCESS });
+                
+                
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
     }
 }

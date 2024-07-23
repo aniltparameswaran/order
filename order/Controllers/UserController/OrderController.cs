@@ -42,7 +42,7 @@ namespace order.Controllers.UserController
                 var itemDetails = itemDeatilsList.Select(item => new OrderDetailsDTOModel
                 {
                     product_details_id = item.product_details_id != null ? SecurityUtils.DecryptString(item.product_details_id) : null,
-                    quatity = item.quatity,
+                    quantity = item.quantity,
                 }).ToList();
 
                 orderMasterDTOModel.orderDetailsDTOModels = itemDetails;

@@ -2,6 +2,7 @@
 using MimeKit;
 using order.Context;
 using order.DTOModel;
+using order.IRepository.IUserRepoRepository;
 using order.IRepository.IUserRepository;
 using order.Utils;
 
@@ -11,10 +12,14 @@ namespace order.Repository.UserRepository
     public class OrderRepo : IOrderRepo
     {
         private readonly DapperContext _dapperContext;
+        private readonly IShopRepo _shopRepo;
+        private readonly IItemRepo _itemRepo;
 
-        public OrderRepo(DapperContext dapperContext)
+        public OrderRepo(DapperContext dapperContext, IShopRepo shopRepo, IItemRepo itemRepo)
         {
             _dapperContext = dapperContext;
+            _shopRepo = shopRepo;
+            _itemRepo = itemRepo;
         }
 
         
@@ -39,8 +44,24 @@ namespace order.Repository.UserRepository
             var deletePayment = "delete from tb_payment where payment_id=@payment_id;";
 
 
+            var updateCredit = "update tb_shop_credit set creadit_amount=@creadit_amount where updated_by=@updatedBy,updated_date=now()  where shop_credit_id=@CreditId;";
+
+            var checkShopIsExsitInCredit = " select shop_credit_id,creadit_amount from tb_shop_credit where shop_id=@shopId and is_active=1;";
+
+
             using (var connection=_dapperContext.CreateConnection())
             {
+                foreach (var orderDetails in orderMasterDTOModel.orderDetailsDTOModels)
+                {
+                    var (status, massage) = await _itemRepo.CheckQuantity(orderDetails.product_details_id, orderDetails.quantity);
+
+                    if (!status)
+                    {
+                        var encryptd = SecurityUtils.EncryptString(orderDetails.product_details_id);
+                        return (null , encryptd + " is "+massage);
+                    }
+                }
+
                 PaymentDTOModel paymentModel =new PaymentDTOModel();
                 paymentModel.payment_no = orderMasterDTOModel.payment_no;
                 paymentModel.payment_type = orderMasterDTOModel.payment_type;
@@ -73,13 +94,13 @@ namespace order.Repository.UserRepository
                         orderDetailsParameter.Add("orderDetailsUUID", orderDetailsUUID);
                         orderDetailsParameter.Add("order_master_id", orderMasterId);
                         orderDetailsParameter.Add("product_details_id", orderDetails.product_details_id);
-                        orderDetailsParameter.Add("quatity", orderDetails.quatity);
+                        orderDetailsParameter.Add("quatity", orderDetails.quantity);
 
                         var orderDetailsId = await connection.ExecuteScalarAsync<string>(insertOrderDetails, orderDetailsParameter);
                         if (!string.IsNullOrEmpty(orderDetailsId))
                         {
 
-                            var (status,message) = UpdateSubProductQuatity(orderDetails.product_details_id, orderDetails.quatity).Result;
+                            var (status,message) = UpdateSubProductQuatity(orderDetails.product_details_id, orderDetails.quantity).Result;
                             if (!status)
                             {
                                 
@@ -114,11 +135,7 @@ namespace order.Repository.UserRepository
             var insertPayment = "INSERT INTO tb_payment(payment_id,shop_id,amount,payment_type,payment_no,inserted_by)" +
                 "VALUES(@paymentUUID,@shop_id,@amount,@payment_type,@payment_no,@inserted_by);" +
                 "SELECT @paymentUUID ";
-
-            var updateCredit = "update tb_shop_credit set creadit_amount=@creadit_amount,updated_by=@updated_by,updated_date=now() where shop_id=@shop_id;" +
-                "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
-
-            var getCreditAmount = "select creadit_amount from tb_shop_credit where shop_id=@shop_id ;";
+            
 
             using(var connection=_dapperContext.CreateConnection())
             {
@@ -135,7 +152,7 @@ namespace order.Repository.UserRepository
                 if (!string.IsNullOrEmpty(paymentId))
                 {
 
-                    var status = await UpdateCredit(paymentDTOModel.total_amount, paymentDTOModel.amount, paymentDTOModel.shop_id, inserted_by);
+                    var status = await UpdateCredit(paymentDTOModel.total_amount, paymentDTOModel.amount, paymentDTOModel.shop_id, inserted_by, paymentId);
                     if (status != 0)
                     {
                         return paymentId;
@@ -189,23 +206,38 @@ namespace order.Repository.UserRepository
             }
         }
 
-        public async Task<int> UpdateCredit(decimal creadit_amount, decimal payed_amount, string shop_id, string inserted_by)
+        public async Task<int> UpdateCredit(decimal creadit_amount, decimal payed_amount, string shop_id, string inserted_by,string payment_id)
         {
-            var updateCredit = "update tb_shop_credit set creadit_amount=@creadit_amount,updated_by=@updated_by,updated_date=now() where shop_id=@shop_id;" +
+            var updateCredit = "update tb_shop_credit set creadit_amount=@creadit_amount,updated_by=@updated_by,updated_date=now(),payment_id=@payment_id where shop_id=@shop_id and is_active=1;" +
                "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
 
-            var getCreditAmount = "select creadit_amount from tb_shop_credit where shop_id=@shop_id ;";
+            var getCreditAmount = "select creadit_amount from tb_shop_credit where shop_id=@shop_id and is_active=1 ;";
+
+            var checekShopIsExistInCredit = "select shop_credit_id from tb_shop_credit where shop_id=@shop_id and is_active=1;";
 
             using (var connection = _dapperContext.CreateConnection())
             {
-                decimal creditAmount = await connection.QuerySingleOrDefaultAsync<decimal>(getCreditAmount, new { shop_id = shop_id });
-                decimal totalCreaditAmout = creditAmount + creadit_amount;
-                var balanceAmount = totalCreaditAmout - payed_amount;
+                var creditId= await connection.QuerySingleOrDefaultAsync<string>(checekShopIsExistInCredit, new { shop_id = shop_id });
+                decimal balanceAmount = 0;
+                if (creditId == null)
+                {
+                    creditId = await _shopRepo.InsertCredit(shop_id, inserted_by);
+                    
+                    balanceAmount = creadit_amount - payed_amount;
+                }
+                else
+                {
+                    decimal creditAmount = await connection.QuerySingleOrDefaultAsync<decimal>(getCreditAmount, new { shop_id = shop_id });
+                    decimal totalCreaditAmout = creditAmount + creadit_amount;
+                    balanceAmount = totalCreaditAmout - payed_amount;
+                }
+                
 
                 var status = await connection.ExecuteScalarAsync<int>(updateCredit, new
                 {
                     creadit_amount = balanceAmount,
                     updated_by = inserted_by,
+                    payment_id = payment_id,
                     shop_id = shop_id
 
                 });
