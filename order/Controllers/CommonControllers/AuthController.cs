@@ -119,12 +119,12 @@ namespace order.Controllers.CommonControllers
 
         [HttpPost]
         [Route("varification-otp")]
-        public async Task<IActionResult> VarificationOtp(CheckOtpDTOModel checkOtpDTOModel)
+        public async Task<IActionResult> VerificationOtp(CheckOtpDTOModel checkOtpDTOModel)
         {
             try
             {
 
-                var (status, massage) = await _authRepo.VarificationOtp(checkOtpDTOModel.data, checkOtpDTOModel.otp);
+                var (status, massage) = await _authRepo.VerificationOtp(checkOtpDTOModel.data, checkOtpDTOModel.otp);
                 if (status)
                 {
                     return Ok(new { data = massage, message = StatusUtils.SUCCESS });

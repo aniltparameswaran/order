@@ -42,8 +42,8 @@ namespace order.Controllers.UserController
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
             }
         }
-        [HttpGet]
-        [Route("check-quantity-vailable")]
+        [HttpPost]
+        [Route("check-quantity-available")]pdate
         public async Task<IActionResult> CheckQuantityAvailable(string product_details_id,int quatity)
         {
             try

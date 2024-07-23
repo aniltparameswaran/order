@@ -195,7 +195,7 @@ namespace order.Repository.CommonRepository
 
         }
 
-        public async Task<(bool, string)> VarificationOtp(string data, int otp)
+        public async Task<(bool, string)> VerificationOtp(string data, int otp)
         {
             EncryptvalueModel decryptedData = DecryptModel(data);
             if (decryptedData != null)
