@@ -133,7 +133,7 @@ namespace order.Controllers.UserController
 
 
         [HttpGet]
-        [Route("get-cuurent-balance-by-shop-id")]
+        [Route("get-current-balance-by-shop-id")]
         public async Task<IActionResult> GetCurrentBalanceByShopId(string shop_id)
         {
             try
