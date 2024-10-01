@@ -23,6 +23,10 @@ namespace order.Controllers.UserController
             try
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                if (userIdClaimed == null)
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Token is null" });
+                }
                 var userId = userIdClaimed.Value.ToString();
                 var decryptUserId = SecurityUtils.DecryptString(userId);
                 if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
@@ -49,6 +53,10 @@ namespace order.Controllers.UserController
             try
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                if (userIdClaimed == null)
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Token is null" });
+                }
                 var userId = userIdClaimed.Value.ToString();
                 var decryptUserId = SecurityUtils.DecryptString(userId);
                 if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
