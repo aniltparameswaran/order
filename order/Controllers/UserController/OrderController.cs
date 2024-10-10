@@ -34,9 +34,9 @@ namespace order.Controllers.UserController
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                
 
-                orderMasterDTOModel.shop_id=SecurityUtils.DecryptString(orderMasterDTOModel.shop_id);
+
+                orderMasterDTOModel.shop_id = SecurityUtils.DecryptString(orderMasterDTOModel.shop_id);
 
                 List<OrderDetailsDTOModel> itemDeatilsList = orderMasterDTOModel.orderDetailsDTOModels;
                 var itemDetails = itemDeatilsList.Select(item => new OrderDetailsDTOModel
@@ -46,13 +46,13 @@ namespace order.Controllers.UserController
                 }).ToList();
 
                 orderMasterDTOModel.orderDetailsDTOModels = itemDetails;
-                var (lastInsertedId,message) = await _orderRepo.InsertOrder(orderMasterDTOModel, decryptUserId);
+                var (lastInsertedId, message) = await _orderRepo.InsertOrder(orderMasterDTOModel, decryptUserId);
 
                 if (lastInsertedId != null)
                 {
 
-                    var decryptInsertedId = SecurityUtils.EncryptString(lastInsertedId);
-                    return Ok(new { data = decryptInsertedId, message = message });
+                    var encryptInsertedId = SecurityUtils.EncryptString(lastInsertedId);
+                    return Ok(new { data = encryptInsertedId, message = message });
                 }
                 return BadRequest(new { data = string.Empty, message = message });
             }
@@ -61,6 +61,6 @@ namespace order.Controllers.UserController
                 return StatusCode(500, ex.Message);
             }
         }
-        
+
     }
 }

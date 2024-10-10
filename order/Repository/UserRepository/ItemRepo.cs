@@ -11,7 +11,7 @@ namespace order.Repository.UserRepository
     public class ItemRepo : IItemRepo
     {
         private readonly DapperContext _dapperContext;
-        
+
 
         public ItemRepo(DapperContext dapperContext)
         {
@@ -21,22 +21,22 @@ namespace order.Repository.UserRepository
         public async Task<(bool, string)> CheckQuantity(string product_details_id, int quatity)
         {
             var getQuery = "select count(*) from tb_product_details  where is_delete=0 and is_active=1 and" +
-                " available_quantity>@quantity and product_details_id=@product_details_id;";
+                " available_quantity>=@quantity and product_details_id=@product_details_id;";
             using (var connection = _dapperContext.CreateConnection())
             {
-                
-                    var count = await connection.QuerySingleOrDefaultAsync<int>(getQuery, new { quantity = quatity, product_details_id= product_details_id });
-                    if (count > 0)
-                    {
-                        return (true, StatusUtils.QUANTITY_AVAILABLE);
-                    }
-                    else
-                    {
-                        return (false, StatusUtils.QUANTITY_NOT_AVAILABLE);
-                    }
-                   
-               
-                
+
+                var count = await connection.QuerySingleOrDefaultAsync<int>(getQuery, new { quantity = quatity, product_details_id = product_details_id });
+                if (count > 0)
+                {
+                    return (true, StatusUtils.QUANTITY_AVAILABLE);
+                }
+                else
+                {
+                    return (false, StatusUtils.QUANTITY_NOT_AVAILABLE);
+                }
+
+
+
 
             }
         }
@@ -49,7 +49,7 @@ namespace order.Repository.UserRepository
                 " where tb_product_details.is_delete=0 and tb_product_details.is_active=1 and tb_product_details.available_quantity>0 and tb_product_master.product_code=@product_code;";
             using (var connection = _dapperContext.CreateConnection())
             {
-                var itemList= await connection.QueryAsync<GetProductDetailsModel>(getQuery, new { product_code = item_code });
+                var itemList = await connection.QueryAsync<GetProductDetailsModel>(getQuery, new { product_code = item_code });
                 var itemDetails = itemList.Select(item => new GetProductDetailsModel
                 {
                     product_details_id = item.product_details_id != null ? SecurityUtils.EncryptString(item.product_details_id) : null,

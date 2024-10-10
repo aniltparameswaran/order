@@ -31,17 +31,18 @@ namespace order.Controllers.UserController
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                var (shopId,message) = await _shopRepo.CheckShopIsExsit(shopDTOModel.lisense_number, shopDTOModel.latitude, shopDTOModel.logitude);
+                var (shopId, message) = await _shopRepo.CheckShopIsExsit(shopDTOModel.lisense_number, shopDTOModel.latitude, shopDTOModel.logitude);
                 if (shopId != null)
                 {
-                    var decryptshopId = SecurityUtils.EncryptString(shopId);
                     return BadRequest(new { data = shopId, message = message });
                 }
                 var shp_id = await _shopRepo.InsertShop(shopDTOModel, decryptUserId);
+
+
                 if (shp_id != null)
                 {
-
-                    return Ok(new { data = shp_id, message = StatusUtils.SUCCESS });
+                    var encrypthopId = SecurityUtils.EncryptString(shp_id);
+                    return Ok(new { data = encrypthopId, message = StatusUtils.SUCCESS });
                 }
                 return BadRequest(new { data = string.Empty, message = StatusUtils.FAILED });
             }
@@ -150,8 +151,8 @@ namespace order.Controllers.UserController
                 var balance = await _shopRepo.GetCurrentBalanceByShopId(shop_id);
 
                 return Ok(new { data = balance, message = StatusUtils.SUCCESS });
-                
-                
+
+
             }
             catch (Exception ex)
             {

@@ -38,7 +38,7 @@ namespace order.Repository.UserRepository
 
         public async Task<decimal> GetCurrentBalanceByShopId(string shop_id)
         {
-            var getBalanceByShopId = "select creadit_amount from tb_shop_credit where is_active=0 and shop_id=@shop_id";
+            var getBalanceByShopId = "select creadit_amount from tb_shop_credit where is_active=1 and shop_id=@shop_id";
             using (var connection = _dapperContext.CreateConnection())
             {
                 return await connection.QueryFirstOrDefaultAsync<decimal>(getBalanceByShopId, new { shop_id = shop_id });
