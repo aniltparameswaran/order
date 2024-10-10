@@ -118,7 +118,7 @@ namespace order.Repository.CommonRepository
                 _configuration["Jwt:Issuer"],
                 _configuration["Jwt:Audience"],
                 claims,
-                expires: DateTime.UtcNow.AddMinutes(15), // Shorter expiry for access token
+                expires: DateTime.UtcNow.AddDays(15), // Shorter expiry for access token
                 signingCredentials: signIn
             );
 
