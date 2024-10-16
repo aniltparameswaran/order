@@ -62,5 +62,42 @@ namespace order.Controllers.UserController
             }
         }
 
+
+
+        [Authorize]
+        [HttpPost]
+        [Route("add-payment")]
+        public async Task<IActionResult> InsertPayment(PaymentDTOModel paymentDTOModel)
+        {
+            try
+            {
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+
+                var userId = userIdClaimed.Value.ToString();
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
+                }
+
+
+                paymentDTOModel.shop_id = SecurityUtils.DecryptString(paymentDTOModel.shop_id);
+
+                var lastInsertedId = await _orderRepo.InsertPayment(paymentDTOModel, decryptUserId);
+
+                if (lastInsertedId != null)
+                {
+
+                    var encryptInsertedId = SecurityUtils.EncryptString(lastInsertedId);
+                    return Ok(new { data = encryptInsertedId, message = StatusUtils.SUCCESS });
+                }
+                return BadRequest(new { data = string.Empty, message = StatusUtils.FAILED });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
     }
 }

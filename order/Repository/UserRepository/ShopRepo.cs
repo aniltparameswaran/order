@@ -186,7 +186,6 @@ namespace order.Repository.UserRepository
                     "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
                 using (var connection = _dapperContext.CreateConnection())
                 {
-                   
                     var parameters = new DynamicParameters();
                     parameters.Add("shop_id", shop_id);
                     parameters.Add("shop_name", shopDTOModel.shop_name);
@@ -198,12 +197,12 @@ namespace order.Repository.UserRepository
                     parameters.Add("latitude", shopDTOModel.latitude);
                     parameters.Add("logitude", shopDTOModel.logitude);
                     parameters.Add("updated_by", updated_by);
-                    
 
                     var update_user = await connection.ExecuteScalarAsync<int>
                       (user_update_query, parameters);
 
                     return update_user;
+
                 }
 
             }
