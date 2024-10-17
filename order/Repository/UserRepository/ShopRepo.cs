@@ -20,13 +20,13 @@ namespace order.Repository.UserRepository
             _dapperContext = dapperContext;
         }
 
-        public async Task<(string,string)> CheckShopIsExsit(string lisense_number, decimal latitude, decimal logitude)
+        public async Task<(string,string)> CheckShopIsExsit(string license_number, decimal latitude, decimal logitude)
         {
-            var getLocation = "select shop_id from tb_shop where lisense_number=@lisense_number and is_delete=0; ";
+            var getLocation = "select shop_id from tb_shop where license_number=@license_number and is_delete=0; ";
             using (var connection = _dapperContext.CreateConnection())
             {
                 const double range = 0.0001;
-                var locations = await connection.QuerySingleOrDefaultAsync<string>(getLocation, new { lisense_number }); ;
+                var locations = await connection.QuerySingleOrDefaultAsync<string>(getLocation, new { license_number }); ;
                 if (locations != null)
                 {
                     return (locations, StatusUtils.ALREADY_SHOP_IS_ADDED);
@@ -71,8 +71,8 @@ namespace order.Repository.UserRepository
 
         public async Task<ShopModel> GetShopDetailByShopId(string shop_id, string userId)
         {
-            var getShop = "select tb_shop.shop_id,tb_shop.shop_name,tb_shop.address,tb_shop.pin,tb_shop.lantmark,tb_shop.latitude,tb_shop.logitude," +
-                "tb_shop.phone,tb_shop.email,tb_shop.lisense_number,tb_shop.is_active,tb_shop_credit.creadit_amount" +
+            var getShop = "select tb_shop.shop_id,tb_shop.shop_name,tb_shop.address,tb_shop.pin,tb_shop.landmark,tb_shop.latitude,tb_shop.logitude," +
+                "tb_shop.phone,tb_shop.email,tb_shop.license_number,tb_shop.is_active,tb_shop_credit.creadit_amount" +
                 " from tb_shop " +
                 "inner join tb_shop_credit on tb_shop_credit.shop_id=@shop_id " +
                 "where tb_shop.is_delete=0 and" +
@@ -114,8 +114,8 @@ namespace order.Repository.UserRepository
         public async Task<string> InsertShop(ShopDTOModel shopDTOModel, string inserted_by)
         {
             var insertShop = "INSERT INTO tb_shop" +
-                 "(shop_id,shop_name, address,pin,lantmark,latitude,logitude, phone, email, lisense_number,inserted_by)" +
-                 "VALUES (@shopUUID,@shop_name,@address,@pin,@lantmark,@latitude,@logitude, @phone, @email, @lisense_number,@inserted_by);" +
+                 "(shop_id,shop_name, address,pin,landmark,latitude,logitude, phone, email, license_number,inserted_by)" +
+                 "VALUES (@shopUUID,@shop_name,@address,@pin,@landmark,@latitude,@logitude, @phone, @email, @license_number,@inserted_by);" +
                  "SELECT @shopUUID;";
 
            
@@ -131,10 +131,10 @@ namespace order.Repository.UserRepository
                 shopParameter.Add("email", shopDTOModel.email);
                 shopParameter.Add("phone", shopDTOModel.phone);
                 shopParameter.Add("pin", shopDTOModel.pin);
-                shopParameter.Add("lantmark", shopDTOModel.lantmark);
+                shopParameter.Add("landmark", shopDTOModel.landmark);
                 shopParameter.Add("latitude", shopDTOModel.latitude);
                 shopParameter.Add("logitude", shopDTOModel.logitude);
-                shopParameter.Add("lisense_number", shopDTOModel.lisense_number);
+                shopParameter.Add("license_number", shopDTOModel.license_number);
                 shopParameter.Add("inserted_by", inserted_by);
 
 
@@ -193,7 +193,7 @@ namespace order.Repository.UserRepository
                     parameters.Add("email", shopDTOModel.email);
                     parameters.Add("phone", shopDTOModel.phone);
                     parameters.Add("pin", shopDTOModel.pin);
-                    parameters.Add("lantmark", shopDTOModel.lantmark);
+                    parameters.Add("landmark", shopDTOModel.lantmark);
                     parameters.Add("latitude", shopDTOModel.latitude);
                     parameters.Add("logitude", shopDTOModel.logitude);
                     parameters.Add("updated_by", updated_by);

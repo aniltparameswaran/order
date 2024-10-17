@@ -31,7 +31,7 @@ namespace order.Controllers.UserController
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                var (shopId, message) = await _shopRepo.CheckShopIsExsit(shopDTOModel.lisense_number, shopDTOModel.latitude, shopDTOModel.logitude);
+                var (shopId, message) = await _shopRepo.CheckShopIsExsit(shopDTOModel.license_number, shopDTOModel.latitude, shopDTOModel.logitude);
                 if (shopId != null)
                 {
                     return BadRequest(new { data = shopId, message = message });
