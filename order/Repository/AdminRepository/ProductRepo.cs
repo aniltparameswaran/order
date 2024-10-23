@@ -170,6 +170,7 @@ namespace order.Repository.AdminRepository
                     parameters.Add("sleeve", productMasterUpdateDTOModel.sleeve);
                     parameters.Add("product_type", productMasterUpdateDTOModel.product_type);
                     parameters.Add("product_master_id", product_master_id);
+                    parameters.Add("material ", productMasterUpdateDTOModel.material);
 
                     var update_product = await connection.ExecuteScalarAsync<int>
                       (product_master_update_query, parameters);
@@ -348,15 +349,15 @@ namespace order.Repository.AdminRepository
                 using (var connection = _dapperContext.CreateConnection())
                 using (var multi = await connection.QueryMultipleAsync(query, new { product_master_id }))
                 {
-                    var company = await multi.ReadSingleOrDefaultAsync<GetProductDetailsByMasterId>();
-                    if (company != null)
-                        company.ProductDetailsList = (await multi.ReadAsync<GetProductDetailsModel>()).ToList();
+                    var product = await multi.ReadSingleOrDefaultAsync<GetProductDetailsByMasterId>();
+                    if (product != null)
+                        product.ProductDetailsList = (await multi.ReadAsync<GetProductDetailsModel>()).ToList();
 
-                    company.product_master_id = company.product_master_id != null ? SecurityUtils.EncryptString(company.product_master_id) : null;
-                    company.brand_id = company.brand_id != null ? SecurityUtils.EncryptString(company.brand_id) : null;
+                    product.product_master_id = product.product_master_id != null ? SecurityUtils.EncryptString(product.product_master_id) : null;
+                    product.brand_id = product.brand_id != null ? SecurityUtils.EncryptString(product.brand_id) : null;
 
 
-                    List<GetProductDetailsModel> ProductDetailsList= company.ProductDetailsList;
+                    List<GetProductDetailsModel> ProductDetailsList= product.ProductDetailsList;
 
 
                     var ProductDetails = ProductDetailsList.Select(productDetail => new GetProductDetailsModel
@@ -369,9 +370,9 @@ namespace order.Repository.AdminRepository
                         is_active = productDetail.is_active,
                     }).ToList();
 
-                    company.ProductDetailsList= ProductDetails;
+                    product.ProductDetailsList= ProductDetails;
 
-                    return company;
+                    return product;
                 }
 
             }

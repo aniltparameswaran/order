@@ -26,7 +26,7 @@ namespace order.Repository.UserRepository
             using (var connection = _dapperContext.CreateConnection())
             {
                 const double range = 0.0001;
-                var locations = await connection.QuerySingleOrDefaultAsync<string>(getLocation, new { license_number }); ;
+                var locations = await connection.QuerySingleOrDefaultAsync<string>(getLocation, new { license_number });
                 if (locations != null)
                 {
                     return (locations, StatusUtils.ALREADY_SHOP_IS_ADDED);

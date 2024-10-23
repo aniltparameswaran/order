@@ -4,8 +4,8 @@ using order.Context;
 using order.DTOModel;
 using order.IRepository.IUserRepoRepository;
 using order.IRepository.IUserRepository;
+using order.Models;
 using order.Utils;
-
 
 namespace order.Repository.UserRepository
 {
@@ -22,7 +22,45 @@ namespace order.Repository.UserRepository
             _itemRepo = itemRepo;
         }
 
-        
+        public async Task<IEnumerable<GetOrderMasterByUserIdModel>> GetOrderByUserId(string user_id)
+        {
+            var getOrderMasterByUserId = "Select * from tb_order_master where inserted_by=@user_id";
+            var getOrderDetailsByOrderMasterId = "Select * from tb_order_details where order_master_id=@order_master_id";
+
+            using (var connection = _dapperContext.CreateConnection())
+            {
+                var orderMaster = await connection.QueryAsync(getOrderMasterByUserId, new { user_id });
+                List<GetOrderMasterByUserIdModel> getOrderMaster= new List<GetOrderMasterByUserIdModel>();
+                if (orderMaster != null)
+                {
+                    foreach (var item in orderMaster)
+                    {
+                        if (item != null)
+                        {
+                            GetOrderMasterByUserIdModel getOrder = new GetOrderMasterByUserIdModel();
+                            getOrder.order_master_id = item.order_master_id;
+                            getOrder.shop_id = item.shop_id;
+                            getOrder.total_amount = item.total_amount;
+                            getOrder.payed_amount = item.payed_amount;
+                            getOrder.urgent = item.urgent;
+                            getOrder.total_number_of_item = item.total_number_of_item;
+                            getOrder.payment_type = item.payment_type;
+                            getOrder.payment_no = item.payment_no;
+                            getOrder.delivery_status = item.delivery_status;
+                            var orderDetails = await connection.QueryAsync<GetOrderDetailsModel>(getOrderDetailsByOrderMasterId, new { order_master_id=item.order_master_id });
+
+                            getOrder.orderDetailsDTOModels = orderDetails.ToList();
+
+
+                            getOrderMaster.Add(getOrder);
+                        }
+                            
+
+                    }
+                }
+                return getOrderMaster;
+            }
+        }
 
         public async Task<(string,string)> InsertOrder(OrderMasterDTOModel orderMasterDTOModel, string inserted_by)
         {

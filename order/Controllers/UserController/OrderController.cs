@@ -99,5 +99,41 @@ namespace order.Controllers.UserController
             }
         }
 
+
+
+        [Authorize]
+        [HttpGet]
+        [Route("get-order")]
+        public async Task<IActionResult> GetOrder()
+        {
+            try
+            {
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+
+                var userId = userIdClaimed.Value.ToString();
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
+                }
+
+
+               
+
+                var order = await _orderRepo.GetOrderByUserId(decryptUserId);
+
+                if (order != null)
+                {
+
+                    return Ok(new { data = order, message = StatusUtils.SUCCESS });
+                }
+                return BadRequest(new { data = string.Empty, message = StatusUtils.FAILED });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
     }
 }
