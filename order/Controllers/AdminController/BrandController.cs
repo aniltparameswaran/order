@@ -33,7 +33,7 @@ namespace order.Controllers.AdminController
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
                 }
-                if (userId != adminId)
+                if (decryptUserId != adminId)
                 {
                     return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
                 }

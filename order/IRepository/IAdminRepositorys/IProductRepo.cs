@@ -7,6 +7,7 @@ namespace order.IRepository.IAdminRepositorys
     {
         public Task<(bool, string)> InsertProduct(ProductMasterDTOModel productMasterDTOModel);
         public Task<int> UpdateProductMaster(ProductMasterUpdateDTOModel productMasterUpdateDTOModel, string product_master_id);
+        public Task<(bool, string)> UpdateProduct(ProductMasterUpdateDtoModel productMasterUpdateDTOModel, string product_master_id);
         public Task<int> UpdateProductDetail(ProductDetailsUpdateDTOModel productDetailsUpdateDTOModel, string product_details_id);
         public Task<(bool, string)> DeleteProductDetail(string product_master_id, long action);
         public Task<(bool, string)> DeleteProductMaster(string product_details_id, long action);

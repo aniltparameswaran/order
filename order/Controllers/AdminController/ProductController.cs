@@ -5,6 +5,7 @@ using order.DTOModel;
 using order.IRepository.IAdminRepositorys;
 using order.Repository;
 using order.Utils;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace order.Controllers.AdminController
 {
@@ -85,6 +86,38 @@ namespace order.Controllers.AdminController
                 if (update_status > 0)
                 {
                     return Ok(new { data = string.Empty, message = "Successfully  update product master" });
+                }
+                return BadRequest(new { data = string.Empty, message = "Fail to update product master" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPut]
+        [Route("update-product")]
+        public async Task<IActionResult> UpdateProduct(ProductMasterUpdateDtoModel model, string product_master_id)
+        {
+            try
+            {
+                var userIdClaimed = HttpContext.User.FindFirst("user_id");
+                var userId = userIdClaimed.Value.ToString();
+                var decryptUserId = SecurityUtils.DecryptString(userId);
+                if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
+                {
+                    return Unauthorized(new { data = string.Empty, message = "Token is invalid" });
+                }
+                if (decryptUserId != adminId)
+                {
+                    return Unauthorized(new { data = string.Empty, message = StatusUtils.UNAUTHORIZED_ACCESS });
+                }
+                product_master_id = SecurityUtils.DecryptString(product_master_id);
+                model.brand_id = SecurityUtils.DecryptString(model.brand_id);
+                var (status, message) = await _productRepo.UpdateProduct(model, product_master_id);
+                if (status)
+                {
+                    return Ok(new { data = status, message = message });
                 }
                 return BadRequest(new { data = string.Empty, message = "Fail to update product master" });
             }

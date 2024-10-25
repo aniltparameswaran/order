@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.IdentityModel.Tokens;
 using order.Context;
 using order.DTOModel;
 using order.IRepository.IAdminRepositorys;
@@ -54,7 +55,7 @@ namespace order.Repository.AdminRepository
                 "SELECT @productDetailsUUID;";
             var last_inserted_Code = "SELECT product_code FROM tb_product_master ORDER BY inserted_date DESC LIMIT 1;";
             var deleteProductMasterById = "delete from tb_product_master where product_master_id=@product_master_id";
-            var deleteProductDetailById = "delete from product_deatils_id where product_master_id=@product_master_id";
+            var deleteProductDetailById = "delete from tb_product_details where product_master_id=@product_master_id";
 
             using (var connection = _dapperContext.CreateConnection())
             {
@@ -129,10 +130,14 @@ namespace order.Repository.AdminRepository
         {
             try
             {
+
                 var product_detail_update_query = "update tb_product_details SET available_quantity=@available_quantity," +
                     "rate=@rate,discount=@discount,size_range=@size_range," +
                     "updated_date=NOW() where product_details_id=@product_details_id;" +
                     "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
+
+
+
                 using (var connection = _dapperContext.CreateConnection())
                 {
                     var parameters = new DynamicParameters();
@@ -382,5 +387,99 @@ namespace order.Repository.AdminRepository
             }
         }
 
+        public async Task<(bool, string)> UpdateProduct(ProductMasterUpdateDtoModel productMasterUpdateDTOModel, string product_master_id)
+        {
+            var insertProductDetails = "INSERT INTO tb_product_details(product_details_id,product_master_id,available_quantity,rate,discount,size_range) " +
+              "VALUES(@productDetailsUUID,@product_master_id,@available_quantity,@rate,@discount,@size_range); " +
+              "SELECT @productDetailsUUID;";
+
+            var product_detail_update_query = "update tb_product_details SET available_quantity=@available_quantity,"+
+                "rate=@rate,discount=@discount,size_range=@size_range,is_active=1,is_delete=0,"+
+                "updated_date=NOW() where product_details_id=@product_details_id;"+
+                "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
+
+            var product_master_update_query = "update tb_product_master SET brand_id=@brand_id,material=@material,"+
+                "sleeve=@sleeve,product_type=@product_type,updated_date=NOW() where product_master_id=@product_master_id;"+
+                "SELECT CASE WHEN ROW_COUNT() > 0 THEN 1 ELSE 0 END;";
+
+
+
+            var deleteProductDetailById = "update tb_product_details set is_active=@is_active,is_delete=@is_delete where product_master_id=@product_master_id";
+            var deleteDetailById = "delete from tb_product_details where updated_date IS  NULL";
+
+
+            using (var connection = _dapperContext.CreateConnection())
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("brand_id", productMasterUpdateDTOModel.brand_id);
+                parameters.Add("sleeve", productMasterUpdateDTOModel.sleeve);
+                parameters.Add("product_type", productMasterUpdateDTOModel.product_type);
+                parameters.Add("product_master_id", product_master_id);
+                parameters.Add("material ", productMasterUpdateDTOModel.material);
+
+                var update_product_master = await connection.ExecuteScalarAsync<int>(product_master_update_query, parameters);
+                if (update_product_master == 1)
+                {
+                    await connection.ExecuteAsync(deleteProductDetailById, new { product_master_id, is_active =0, is_delete =1});
+
+                    if (productMasterUpdateDTOModel.ProductDetailsListl.Count() > 0)
+                    {
+                        foreach (var productDeatils in productMasterUpdateDTOModel.ProductDetailsListl)
+                        {
+                            var productDetailsParameters = new DynamicParameters();
+                            productDetailsParameters.Add("available_quantity", productDeatils.available_quantity);
+                            productDetailsParameters.Add("rate", productDeatils.rate);
+                            productDetailsParameters.Add("discount", productDeatils.discount);
+                            productDetailsParameters.Add("size_range", productDeatils.size_range);
+                            if (!string.IsNullOrEmpty(productDeatils.product_details_id))
+                            {
+                                productDeatils.product_details_id= SecurityUtils.DecryptString(productDeatils.product_details_id);
+
+                                productDetailsParameters.Add("product_details_id", productDeatils.product_details_id);
+                                var update_product_details = await connection.ExecuteScalarAsync<int>
+                                    (product_detail_update_query, productDetailsParameters);
+                                if(update_product_details==1)
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                     await connection.ExecuteScalarAsync<int>
+                                    (deleteDetailById);
+                                    await connection.ExecuteAsync(deleteProductDetailById, new { product_master_id, is_active = 1, is_delete = 0 });
+                                    return  (false, StatusUtils.FAILED);
+                                }
+
+                            }
+                            else
+                            {
+                                var productDetailsUUID = Guid.NewGuid().ToString();
+                                productDetailsParameters.Add("productDetailsUUID", productDetailsUUID);
+                                var product_detail_id = await connection.ExecuteScalarAsync<string>(insertProductDetails, productDetailsParameters);
+                                if (!string.IsNullOrEmpty(product_master_id))
+                                {
+                                    continue;
+
+                                }
+                                else
+                                {
+                                    await connection.ExecuteScalarAsync<int>
+                                   (deleteDetailById);
+                                    await connection.ExecuteAsync(deleteProductDetailById, new { product_master_id, is_active = 1, is_delete = 0 });
+                                    return (false, StatusUtils.FAILED);
+                                }
+                            }
+                            
+                        }
+
+                    }
+                }
+                else
+                {
+                    return (false, StatusUtils.FAILED);
+                }
+                return (false, StatusUtils.FAILED);
+            }
+        }
     }
 }
