@@ -147,7 +147,7 @@ namespace order.Repository.AdminRepository
                     {
                         return (brand_id, StatusUtils.ALREADY_EXIST);
                     }
-                    return (null, StatusUtils.EMAIL_NOT_EXIST);
+                    return (null, StatusUtils.NOT_EXIST);
                 }
             }
             catch (Exception ex)

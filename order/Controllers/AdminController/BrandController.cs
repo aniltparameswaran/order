@@ -92,14 +92,14 @@ namespace order.Controllers.AdminController
 
         [HttpPut]
         [Route("update-brand")]
-        public async Task<IActionResult> UpdateUserByUser(string brand_name, string brand_id)
+        public async Task<IActionResult> UpdatebrandBybrandId(string brand_name, string brand_id)
         {
             try
             {
                 var userIdClaimed = HttpContext.User.FindFirst("user_id");
                 var userId = userIdClaimed.Value.ToString();
                 var decryptUserId = SecurityUtils.DecryptString(userId);
-                var decryptBrandId = SecurityUtils.EncryptString(brand_id);
+                var decryptBrandId = SecurityUtils.DecryptString(brand_id);
                 if (userIdClaimed == null || string.IsNullOrEmpty(decryptUserId))
                 {
                     return Unauthorized(new { data = string.Empty, message = "Token is invalid" });

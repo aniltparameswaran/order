@@ -27,6 +27,7 @@
         public const string ALREADY_EXIST = "ALREADY_EXIST";
         public const string EMAIL_ALREADY_EXIST = "Email already exist";
         public const string EMAIL_NOT_EXIST = "Email not exist";
+        public const string NOT_EXIST = "Not exist";
         public const string PHONE_NUMBER_NOT_EXIST = "Email not exist";
         public const string SHOP_NOT_EXIST = "Shop not exist";
         public const string PHONE_NUMBER_ALREADY_EXIST = "Phone number already exist";
